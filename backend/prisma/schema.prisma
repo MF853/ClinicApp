@@ -1,0 +1,233 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+// Prisma schema - Sistema de Gerenciamento de Horarios para Terapeutas
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+  moduleFormat  = "cjs"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Clinica {
+  id             String               @id @default(uuid())
+  nome           String
+  cnpj           String?              @unique
+  criadoEm       DateTime             @default(now())
+  atualizadoEm   DateTime             @updatedAt
+  administradores Administrador[]
+  terapeutas     Terapeuta[]
+  configuracao   ConfiguracaoSistema?
+
+  @@map("clinicas")
+}
+
+model Administrador {
+  id         String    @id @default(uuid())
+  clinicaId  String
+  nome       String
+  email      String    @unique
+  senhaHash  String
+  ativo      Boolean   @default(true)
+  criadoEm   DateTime  @default(now())
+  atualizadoEm DateTime @updatedAt
+  clinica    Clinica   @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
+  atestadosAnalisados Atestado[]
+
+  @@index([clinicaId])
+  @@map("administradores")
+}
+
+model Terapeuta {
+  id                    String               @id @default(uuid())
+  clinicaId             String?
+  nome                  String
+  email                 String?              @unique
+  telefone              String?
+  especialidade         String?
+  registroConselho      String?
+  duracaoSessaoMinutos  Int                  @default(50)
+  ativo                 Boolean              @default(true)
+  criadoEm              DateTime             @default(now())
+  atualizadoEm          DateTime             @updatedAt
+  clinica               Clinica?             @relation(fields: [clinicaId], references: [id], onDelete: SetNull)
+  configuracaoParticular ConfiguracaoSistema?
+  horariosGrade         HorarioGradeTerapeuta[]
+  sessoesPacientes      SessaoPaciente[]
+  agendamentos          Agendamento[]        @relation("AgendamentosDoTerapeuta")
+  reposicoesCriadas     Agendamento[]        @relation("ReposicoesCriadasPor")
+
+  @@index([clinicaId])
+  @@map("terapeutas")
+}
+
+model ConfiguracaoSistema {
+  id                            String    @id @default(uuid())
+  clinicaId                     String?   @unique
+  terapeutaResponsavelId        String?   @unique
+  limiteFaltasNaoJustificadas   Int       @default(3)
+  prazoJustificativaHoras       Int       @default(48)
+  permitirReposicaoAutomatica   Boolean   @default(true)
+  criadoEm                      DateTime  @default(now())
+  atualizadoEm                  DateTime  @updatedAt
+  clinica                       Clinica?  @relation(fields: [clinicaId], references: [id], onDelete: Cascade)
+  terapeutaResponsavel          Terapeuta? @relation(fields: [terapeutaResponsavelId], references: [id], onDelete: Cascade)
+
+  @@map("configuracoes_sistema")
+}
+
+model Paciente {
+  id                String          @id @default(uuid())
+  nome              String
+  dataNascimento    DateTime?
+  nomeResponsavel   String?
+  contatoResponsavel String?
+  ativo             Boolean         @default(true)
+  criadoEm          DateTime        @default(now())
+  atualizadoEm      DateTime        @updatedAt
+  sessoes           SessaoPaciente[]
+  ausencias         Ausencia[]
+  atestados         Atestado[]
+
+  @@map("pacientes")
+}
+
+model SessaoPaciente {
+  id                         String                 @id @default(uuid())
+  pacienteId                 String
+  terapeutaId                String
+  // Valores esperados: "ativa", "bloqueada"
+  statusSessao               String                 @default("ativa")
+  faltasNaoJustificadas      Int                    @default(0)
+  dataInicio                 DateTime               @default(now())
+  dataFim                    DateTime?
+  observacoes                String?
+  criadoEm                   DateTime               @default(now())
+  atualizadoEm               DateTime               @updatedAt
+  paciente                   Paciente               @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  terapeuta                  Terapeuta              @relation(fields: [terapeutaId], references: [id], onDelete: Cascade)
+  horariosFixos              GradePacienteHorario[]
+  agendamentos               Agendamento[]
+  ausencias                  Ausencia[]
+
+  @@index([pacienteId, statusSessao])
+  @@index([terapeutaId, statusSessao])
+  @@index([terapeutaId, pacienteId])
+  @@map("sessoes_pacientes")
+}
+
+model HorarioGradeTerapeuta {
+  id                  String                @id @default(uuid())
+  terapeutaId         String
+  diaSemana           Int
+  horaInicio          String
+  horaFim             String
+  duracaoMinutos      Int
+  ativo               Boolean               @default(true)
+  faixaEtariaMinima   Int?
+  faixaEtariaMaxima   Int?
+  limitePacientes     Int                   @default(1)
+  permiteReposicao    Boolean               @default(true)
+  criadoEm            DateTime              @default(now())
+  atualizadoEm        DateTime              @updatedAt
+  terapeuta           Terapeuta             @relation(fields: [terapeutaId], references: [id], onDelete: Cascade)
+  vinculosPacientes   GradePacienteHorario[]
+  agendamentos        Agendamento[]
+
+  @@index([terapeutaId, diaSemana, ativo])
+  @@map("horarios_grade_terapeuta")
+}
+
+model GradePacienteHorario {
+  id                      String               @id @default(uuid())
+  sessaoPacienteId        String
+  horarioGradeTerapeutaId String
+  inicioVigencia          DateTime             @default(now())
+  fimVigencia             DateTime?
+  ativo                   Boolean              @default(true)
+  criadoEm                DateTime             @default(now())
+  atualizadoEm            DateTime             @updatedAt
+  sessaoPaciente          SessaoPaciente       @relation(fields: [sessaoPacienteId], references: [id], onDelete: Cascade)
+  horarioGradeTerapeuta   HorarioGradeTerapeuta @relation(fields: [horarioGradeTerapeutaId], references: [id], onDelete: Cascade)
+
+  @@unique([sessaoPacienteId, horarioGradeTerapeutaId, inicioVigencia])
+  @@index([horarioGradeTerapeutaId, ativo])
+  @@map("grade_paciente_horarios")
+}
+
+model Agendamento {
+  id                       String                @id @default(uuid())
+  sessaoPacienteId         String
+  terapeutaId              String
+  horarioGradeTerapeutaId  String?
+  reposicaoCriadaPorId     String?
+  // Valores esperados: "fixo", "reposicao"
+  tipoHorario              String                @default("fixo")
+  // Valores comuns: "agendado", "realizado", "cancelado", "faltou"
+  statusAgendamento        String                @default("agendado")
+  inicioEm                 DateTime
+  fimEm                    DateTime
+  observacoes              String?
+  criadoEm                 DateTime              @default(now())
+  atualizadoEm             DateTime              @updatedAt
+  sessaoPaciente           SessaoPaciente        @relation(fields: [sessaoPacienteId], references: [id], onDelete: Cascade)
+  terapeuta               Terapeuta              @relation("AgendamentosDoTerapeuta", fields: [terapeutaId], references: [id], onDelete: Cascade)
+  horarioGradeTerapeuta    HorarioGradeTerapeuta? @relation(fields: [horarioGradeTerapeutaId], references: [id], onDelete: SetNull)
+  reposicaoCriadaPor       Terapeuta?            @relation("ReposicoesCriadasPor", fields: [reposicaoCriadaPorId], references: [id], onDelete: SetNull)
+  ausencia                 Ausencia?
+
+  @@index([sessaoPacienteId, inicioEm])
+  @@index([terapeutaId, inicioEm])
+  @@index([tipoHorario, statusAgendamento])
+  @@map("agendamentos")
+}
+
+model Ausencia {
+  id                String         @id @default(uuid())
+  agendamentoId     String         @unique
+  sessaoPacienteId  String
+  pacienteId        String
+  motivo            String?
+  justificada       Boolean        @default(false)
+  registradaEm      DateTime       @default(now())
+  criadoEm          DateTime       @default(now())
+  atualizadoEm      DateTime       @updatedAt
+  agendamento       Agendamento    @relation(fields: [agendamentoId], references: [id], onDelete: Cascade)
+  sessaoPaciente    SessaoPaciente @relation(fields: [sessaoPacienteId], references: [id], onDelete: Cascade)
+  paciente          Paciente       @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  atestado          Atestado?
+
+  @@index([sessaoPacienteId, justificada])
+  @@index([pacienteId, justificada])
+  @@map("ausencias")
+}
+
+model Atestado {
+  id                           String        @id @default(uuid())
+  pacienteId                   String
+  ausenciaId                   String        @unique
+  analisadoPorAdministradorId  String?
+  arquivoUrl                   String?
+  descricao                    String?
+  // Valores esperados: "enviado", "em_analise", "aprovado_falta_justificada", "rejeitado"
+  statusAtestado               String        @default("enviado")
+  enviadoEm                    DateTime      @default(now())
+  analisadoEm                  DateTime?
+  criadoEm                     DateTime      @default(now())
+  atualizadoEm                 DateTime      @updatedAt
+  paciente                     Paciente      @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  ausencia                     Ausencia      @relation(fields: [ausenciaId], references: [id], onDelete: Cascade)
+  analisadoPorAdministrador    Administrador? @relation(fields: [analisadoPorAdministradorId], references: [id], onDelete: SetNull)
+
+  @@index([pacienteId, statusAtestado])
+  @@index([analisadoPorAdministradorId])
+  @@map("atestados")
+}

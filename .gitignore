@@ -1,0 +1,94 @@
+# Learn more: https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+*.docx
+
+# =========================
+# Dependencies
+# =========================
+node_modules/
+
+# =========================
+# Build & Compiled Output
+# =========================
+/build
+/dist
+web-build/
+*.tsbuildinfo
+/generated/prisma
+app-example
+
+# =========================
+# Expo & Native Mobile
+# =========================
+.expo/
+expo-env.d.ts
+/ios
+/android
+.kotlin/
+.metro-health-check*
+
+# Native Keys & Certificates
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.pem
+
+# =========================
+# Logs & Runtime Data
+# =========================
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+pids
+*.pid
+*.seed
+*.pid.lock
+# Diagnostic reports (https://nodejs.org/api/report.html)
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# =========================
+# Testing
+# =========================
+/coverage
+/.nyc_output
+
+# =========================
+# Environment Variables
+# =========================
+.env
+.env*.local
+
+# =========================
+# Temp Files
+# =========================
+.temp
+.tmp
+
+# =========================
+# OS & IDEs
+# =========================
+# macOS
+.DS_Store
+
+# General IDEs
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
