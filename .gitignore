@@ -1,0 +1,11 @@
+node_modules/
+.env
+**/dist/
+**/coverage/
+playwright-report/
+test-results/
+**/android/.gradle/
+**/android/local.properties
+**/ios/Pods/
+*.log
+.serena/cache/

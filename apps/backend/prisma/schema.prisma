@@ -1,0 +1,281 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+}
+enum Role {
+  PATIENT
+  THERAPIST
+  ADMIN
+  RECEPTION
+}
+enum AppointmentState {
+  SCHEDULED
+  PENDING
+  EXPIRED
+  CONFIRMED
+  CANCELLED
+  ATTENDED
+  ABSENT
+  EXCUSED
+}
+enum Decision {
+  PENDING
+  APPROVED
+  REJECTED
+}
+model User {
+  id String @id @default(uuid()) @db.Uuid
+  email String @unique
+  name String
+  phone String @default("")
+  password String
+  memberships Membership[]
+  sessions Session[]
+  resets PasswordReset[]
+}
+model Clinic {
+  id String @id @default(uuid()) @db.Uuid
+  name String
+  timezone String @default("America/Recife")
+  particular Boolean @default(false)
+  absenceLimit Int @default(3)
+  justificationDays Int @default(3)
+  evaluationDays Int @default(180)
+  reviewDays Int @default(7)
+  confirmationHour Int @default(18)
+  closeHours Int @default(2)
+  retentionDays Int @default(180)
+  replacementPerAbsence Int @default(2)
+  replacementPerWindow Int @default(4)
+  holidays String[] @default([])
+  requiredCategories String[] @default(["SAUDE_PACIENTE", "SAUDE_DEPENDENTE", "FORCA_MAIOR"])
+  memberships Membership[]
+}
+model Membership {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  clinicId String @db.Uuid
+  role Role
+  active Boolean @default(true)
+  canReview Boolean @default(false)
+  birthDate DateTime? @db.Date
+  registration String @default("")
+  absenceLimit Int?
+  justificationDays Int?
+  resetAt DateTime? @db.Timestamptz
+  suspendedUntil DateTime? @db.Timestamptz
+  user User @relation(fields:[userId],references:[id])
+  clinic Clinic @relation(fields:[clinicId],references:[id])
+  @@unique([userId,clinicId,role])
+  @@unique([id,clinicId])
+  @@index([clinicId,role])
+}
+model Session {
+  id String @id
+  userId String @db.Uuid
+  membershipId String? @db.Uuid
+  csrf String
+  expiresAt DateTime @db.Timestamptz
+  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+  @@index([expiresAt])
+}
+model PasswordReset {
+  id String @id
+  userId String @db.Uuid
+  expiresAt DateTime @db.Timestamptz
+  usedAt DateTime? @db.Timestamptz
+  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+}
+model RateLimit {
+  key String @id
+  count Int
+  until DateTime @db.Timestamptz
+}
+model Slot {
+  id String @id @default(uuid()) @db.Uuid
+  clinicId String @db.Uuid
+  therapistId String @db.Uuid
+  weekday Int
+  minute Int
+  duration Int @default(50)
+  capacity Int @default(1)
+  minAge Int @default(0)
+  maxAge Int @default(120)
+  room String @default("Sala 1")
+  blocked Boolean @default(false)
+  groupOffering Boolean @default(false)
+  @@unique([id,clinicId])
+  @@unique([therapistId,weekday,minute])
+  @@index([clinicId,therapistId])
+}
+model FixedAssignment {
+  id String @id @default(uuid()) @db.Uuid
+  clinicId String @db.Uuid
+  slotId String @db.Uuid
+  patientId String @db.Uuid
+  active Boolean @default(true)
+  @@unique([slotId,patientId])
+  @@index([clinicId,patientId,active])
+}
+model Occurrence {
+  id String @id @default(uuid()) @db.Uuid
+  clinicId String @db.Uuid
+  slotId String @db.Uuid
+  startsAt DateTime @db.Timestamptz
+  endsAt DateTime @db.Timestamptz
+  blocked Boolean @default(false)
+  @@unique([slotId,startsAt])
+  @@unique([id,clinicId])
+  @@index([clinicId,startsAt])
+}
+model Appointment {
+  id String @id @default(uuid()) @db.Uuid
+  clinicId String @db.Uuid
+  occurrenceId String @db.Uuid
+  patientId String @db.Uuid
+  originalId String? @db.Uuid
+  origin String @default("FIXED")
+  status AppointmentState @default(SCHEDULED)
+  opensAt DateTime @db.Timestamptz
+  closesAt DateTime @db.Timestamptz
+  confirmedAt DateTime? @db.Timestamptz
+  cancelledAt DateTime? @db.Timestamptz
+  createdAt DateTime @default(now()) @db.Timestamptz
+  @@unique([occurrenceId,patientId])
+  @@unique([id,clinicId])
+  @@index([clinicId,patientId,status])
+  @@index([status,opensAt,closesAt])
+}
+model Availability {
+  id String @id @default(uuid()) @db.Uuid
+  clinicId String @db.Uuid
+  patientId String @db.Uuid
+  weekday Int
+  startMinute Int
+  endMinute Int
+  @@unique([patientId,weekday,startMinute])
+}
+model Absence {
+  id String @id @default(uuid()) @db.Uuid
+  clinicId String @db.Uuid
+  appointmentId String @unique @db.Uuid
+  patientId String @db.Uuid
+  occurredAt DateTime @db.Timestamptz
+  deadline DateTime @db.Timestamptz
+  state String @default("PROVISIONAL")
+  reason String
+  @@unique([id,clinicId])
+  @@index([clinicId,patientId,state,occurredAt])
+  @@index([state,deadline])
+}
+model Certificate {
+  id String @id @default(uuid()) @db.Uuid
+  clinicId String @db.Uuid
+  absenceId String @unique @db.Uuid
+  patientId String @db.Uuid
+  category String
+  description String
+  declaredDate String?
+  prevalidation String @default("INCONCLUSIVE_DECLARED_DATE")
+  status Decision @default(PENDING)
+  submittedAt DateTime @default(now()) @db.Timestamptz
+  reviewAt DateTime @db.Timestamptz
+  decidedAt DateTime? @db.Timestamptz
+  decidedBy String?
+  reason String?
+  appealAt DateTime? @db.Timestamptz
+  @@unique([id,clinicId])
+  @@index([clinicId,status,submittedAt])
+  @@index([status,reviewAt])
+}
+model Attachment {
+  id String @id @default(uuid()) @db.Uuid
+  clinicId String @db.Uuid
+  certificateId String @db.Uuid
+  objectKey String @unique
+  mime String
+  hash String
+  size Int
+  status String @default("QUARANTINED")
+  failure String?
+  purgedAt DateTime? @db.Timestamptz
+  @@index([certificateId,clinicId])
+}
+model FittingRequest {
+  id String @id @default(uuid()) @db.Uuid
+  clinicId String @db.Uuid
+  occurrenceId String @db.Uuid
+  originalId String @db.Uuid
+  patientId String @db.Uuid
+  status Decision @default(PENDING)
+  appointmentId String? @unique @db.Uuid
+  createdAt DateTime @default(now()) @db.Timestamptz
+  decidedAt DateTime? @db.Timestamptz
+  reason String?
+  @@unique([id,clinicId])
+  @@index([occurrenceId,status])
+  @@index([clinicId,patientId])
+}
+model Reservation {
+  requestId String @id @db.Uuid
+  clinicId String @db.Uuid
+  occurrenceId String @db.Uuid
+  patientId String @db.Uuid
+  active Boolean @default(true)
+  @@index([occurrenceId,active])
+}
+model Audit {
+  id BigInt @id @default(autoincrement())
+  clinicId String? @db.Uuid
+  actor String
+  action String
+  entityId String
+  context Json @default("{}")
+  createdAt DateTime @default(now()) @db.Timestamptz
+  @@index([clinicId,createdAt])
+}
+model Outbox {
+  id String @id @default(uuid())
+  clinicId String? @db.Uuid
+  kind String
+  payload Json
+  createdAt DateTime @default(now()) @db.Timestamptz
+  dispatchedAt DateTime? @db.Timestamptz
+  @@index([dispatchedAt,createdAt])
+}
+model Notification {
+  id String @id
+  clinicId String @db.Uuid
+  userId String @db.Uuid
+  event String
+  entityId String
+  createdAt DateTime @default(now()) @db.Timestamptz
+  sentAt DateTime? @db.Timestamptz
+  attempts Int @default(0)
+  failure String?
+  @@index([clinicId,userId,createdAt])
+}
+model Alert {
+  id String @id @default(uuid()) @db.Uuid
+  clinicId String @db.Uuid
+  audience String
+  text String
+  endsAt DateTime @db.Timestamptz
+  @@index([clinicId,endsAt])
+}
+model PrivacyRequest {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  type String
+  createdAt DateTime @default(now()) @db.Timestamptz
+}
+model Consent {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  document String
+  version String
+  acceptedAt DateTime @default(now()) @db.Timestamptz
+  @@unique([userId,document,version])
+}

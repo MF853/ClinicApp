@@ -1,0 +1,9 @@
+[
+  ".claude/skills/playwright-dev/SKILL.md",
+  ".claude/skills/playwright-devops/SKILL.md",
+  ".claude/skills/playwright-test-results/SKILL.md",
+  ".claude/skills/playwright-triage/SKILL.md",
+  "packages/playwright-core/src/tools/skills/playwright-cli/SKILL.md",
+  "packages/playwright-core/src/tools/skills/playwright-component-testing/SKILL.md",
+  "packages/playwright-core/src/tools/skills/playwright-trace/SKILL.md"
+]
