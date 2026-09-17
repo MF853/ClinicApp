@@ -1,5 +1,14 @@
 # Rastreabilidade
 
+## Grade semanal — 2026-09-17
+
+| Requisitos | Implementação | Evidência / limite |
+|---|---|---|
+| RF-TER-01/02/03/06/08 | `schedule.ts`, `Slots.tsx`: edição própria, restrições inline, alocação e exceção auditada | `schedule.test.ts`, `slots.spec.ts`; horários ocupados não são movidos |
+| RF-CLI-10, RN-21 | Liberação manual de horário fixo preserva confirmadas e reposições | Idempotência e preservação testadas; reativação de sessão bloqueada pendente |
+| RNF-46, integridade de vagas | Lock comum em edição, alocação e reserva; conflitos de paciente | PostgreSQL real: disputas redução/alocação e redução/reserva; 24 testes backend passaram |
+
+
 ## Cadastros e acompanhamento — 2026-09-17
 
 | Requisitos | Implementação | Evidência / limite |

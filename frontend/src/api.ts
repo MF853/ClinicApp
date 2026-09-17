@@ -17,3 +17,6 @@ export interface Occurrence { id: string; startsAt: string; endsAt: string; bloc
 export interface Absence { id: string; occurredAt: string; deadline: string; state: string; appointmentId: string }
 export const roleNames = { PATIENT: 'Paciente', THERAPIST: 'Terapeuta', ADMIN: 'Administrador', RECEPTION: 'Recepção' };
 export function date(value: string, zone: string, options: Intl.DateTimeFormatOptions = { dateStyle: 'medium', timeStyle: 'short' }) { return new Intl.DateTimeFormat('pt-BR', { timeZone: zone, ...options }).format(new Date(value)); }
+
+export const weekdays = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+export const minuteTime = (value: number) => `${String(Math.floor(value / 60)).padStart(2, '0')}:${String(value % 60).padStart(2, '0')}`;

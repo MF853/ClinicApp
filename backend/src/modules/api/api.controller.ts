@@ -6,8 +6,8 @@ import { roles, appointment, patient, certificate } from '../../infrastructure/a
 import { respond } from '../confirmation/confirmation.js';
 import { attendance, countAbsences, consequence, decideCertificate } from '../absences/absences.js';
 import { suggestions, reserve, decideFitting, occupancy } from '../fitting/fitting.js';
-import { schedule, assign, materialize } from '../schedule/schedule.js';
-import { ResponseDto, AttendanceDto, DecisionDto, ReserveDto, ConsequenceDto, AvailabilityDto, SlotDto, AssignDto, MemberDto, ParametersDto, AlertDto, PrivacyDto, ConsentDto, MemberStatusDto, PatientParametersDto } from './dto.js';
+import { schedule, assign, saveSlot, releaseAssignment } from '../schedule/schedule.js';
+import { ResponseDto, AttendanceDto, DecisionDto, ReserveDto, ConsequenceDto, AvailabilityDto, SlotDto, AssignDto, MemberDto, ParametersDto, AlertDto, PrivacyDto, ConsentDto, MemberStatusDto, PatientParametersDto, ReasonDto } from './dto.js';
 import { createMember, memberStatus, patientParameters } from '../members/members.js';
 @ApiTags('Clínica')
 @UseGuards(AuthGuard)
@@ -32,8 +32,17 @@ export class ApiController {
   @Post('members') createMember(@Req() r: AuthRequest, @Body() b: MemberDto) { return createMember(r.context, b); }
   @Post('members/:id/status') memberStatus(@Req() r: AuthRequest, @Param('id', ParseUUIDPipe) id: string, @Body() b: MemberStatusDto) { return transaction(r.context, tx => memberStatus(tx, r.context, id, b.active, b.reason)); }
   @Post('patients/:id/parameters') patientParameters(@Req() r: AuthRequest, @Param('id', ParseUUIDPipe) id: string, @Body() b: PatientParametersDto) { return transaction(r.context, tx => patientParameters(tx, r.context, id, b)); }
-  @Get('slots') slots(@Req() r: AuthRequest) { roles(r.context, 'ADMIN', 'THERAPIST', 'RECEPTION'); return db.slot.findMany({ where: { clinicId: r.context.clinicId, ...(r.context.role === 'THERAPIST' ? { therapistId: r.context.id } : {}) } }); }
-  @Post('slots') slot(@Req() r: AuthRequest, @Body() b: SlotDto) { roles(r.context, 'THERAPIST'); if (b.endMinute <= b.startMinute || b.maxAge < b.minAge) throw new BadRequestException('Revise os horários e a faixa etária.'); return transaction(r.context, async tx => { const slot = await tx.slot.create({ data: { clinicId: r.context.clinicId, therapistId: r.context.id, weekday: b.weekday, minute: b.startMinute, duration: b.endMinute - b.startMinute, capacity: b.capacity, minAge: b.minAge, maxAge: b.maxAge, room: b.room } }); await materialize(tx, r.context); await audit(tx, r.context, 'slot-created', slot.id); return slot; }); }
+  @Get('slots') async slots(@Req() r: AuthRequest) {
+    roles(r.context, 'ADMIN', 'THERAPIST', 'RECEPTION');
+    const therapists = await db.membership.findMany({ where: { clinicId: r.context.clinicId, role: 'THERAPIST', active: true }, include: { user: { select: { name: true } } } });
+    const slots = await db.slot.findMany({ where: { clinicId: r.context.clinicId, therapistId: r.context.role === 'THERAPIST' ? r.context.id : { in: therapists.map(t => t.id) } }, orderBy: [{ weekday: 'asc' }, { minute: 'asc' }] });
+    const assignments = await db.fixedAssignment.findMany({ where: { clinicId: r.context.clinicId, slotId: { in: slots.map(s => s.id) }, active: true } });
+    const patients = await db.membership.findMany({ where: { clinicId: r.context.clinicId, id: { in: assignments.map(a => a.patientId) } }, include: { user: { select: { name: true } } } });
+    return slots.map(s => ({ ...s, therapist: therapists.find(t => t.id === s.therapistId)?.user.name, assignments: assignments.filter(a => a.slotId === s.id).map(a => ({ patientId: a.patientId, name: patients.find(p => p.id === a.patientId)?.user.name })) }));
+  }
+  @Post('slots') slot(@Req() r: AuthRequest, @Body() b: SlotDto) { return transaction(r.context, tx => saveSlot(tx, r.context, b)); }
+  @Post('slots/:id') updateSlot(@Req() r: AuthRequest, @Param('id', ParseUUIDPipe) id: string, @Body() b: SlotDto) { return transaction(r.context, tx => saveSlot(tx, r.context, b, id)); }
+  @Post('slots/:id/assignments/:patientId/release') release(@Req() r: AuthRequest, @Param('id', ParseUUIDPipe) id: string, @Param('patientId', ParseUUIDPipe) patientId: string, @Body() b: ReasonDto) { return transaction(r.context, tx => releaseAssignment(tx, r.context, id, patientId, b.reason)); }
   @Post('slots/:id/assign') assign(@Req() r: AuthRequest, @Param('id', ParseUUIDPipe) id: string, @Body() b: AssignDto) { return transaction(r.context, tx => assign(tx, r.context, id, b.patientId, b.exception, b.reason)); }
   @Post('occurrences/:id/block') block(@Req() r: AuthRequest, @Param('id', ParseUUIDPipe) id: string) { roles(r.context, 'THERAPIST'); return transaction(r.context, async tx => { const o = await tx.occurrence.findFirstOrThrow({ where: { id, clinicId: r.context.clinicId } }); await tx.slot.findFirstOrThrow({ where: { id: o.slotId, therapistId: r.context.id, clinicId: r.context.clinicId } }); if (await occupancy(tx, id) > 0) throw new BadRequestException('Resolva consultas e reservas antes de bloquear.'); const result = await tx.occurrence.update({ where: { id }, data: { blocked: !o.blocked } }); await audit(tx, r.context, 'occurrence-block', id, { blocked: result.blocked }); return result; }); }
   @Post('parameters') parameters(@Req() r: AuthRequest, @Body() b: ParametersDto) { roles(r.context, 'ADMIN'); return transaction(r.context, async tx => { const result = await tx.clinic.update({ where: { id: r.context.clinicId }, data: b }); await audit(tx, r.context, 'parameters-updated', r.context.clinicId, { ...b }); return result; }); }

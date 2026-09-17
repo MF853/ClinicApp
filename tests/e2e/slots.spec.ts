@@ -1,0 +1,74 @@
+import { test, expect } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
+
+test('terapeuta cria e edita grade, cadastra paciente, aloca e libera horário', async ({ page }, info) => {
+  const unique = `${info.project.name}-${Date.now()}`, room = `Sala ${unique}`, password = 'Senha-ficticia!2026';
+  await page.goto('/entrar');
+  await page.getByLabel('E-mail', { exact: true }).fill('admin2@example.test');
+  await page.getByLabel('Senha', { exact: true }).fill('ClinicApp!2026');
+  await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+  await page.getByRole('link', { name: 'Pacientes', exact: true }).click();
+  await page.getByRole('button', { name: 'Cadastrar pessoa' }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('combobox', { name: 'Perfil', exact: true }).selectOption('THERAPIST');
+  await dialog.getByLabel('Nome completo').fill(`Terapeuta ${unique}`);
+  await dialog.getByLabel('E-mail', { exact: true }).fill(`terapeuta-${unique}@example.test`);
+  await dialog.getByLabel('Telefone').fill('81999990000');
+  await dialog.getByLabel('Registro profissional').fill('CRP fictício');
+  await dialog.getByLabel('Senha inicial').fill(password);
+  await dialog.getByRole('button', { name: 'Salvar cadastro' }).click();
+  await expect(dialog).not.toBeVisible();
+  await page.getByRole('button', { name: 'Sair', exact: true }).click();
+  await page.getByLabel('E-mail', { exact: true }).fill(`terapeuta-${unique}@example.test`);
+  await page.getByLabel('Senha', { exact: true }).fill(password);
+  await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+  await page.getByRole('link', { name: 'Grade de horários' }).click();
+  await expect(page.getByText('Nenhum horário cadastrado.')).toBeVisible();
+  for (const [weekday, label] of [['1', room], ['2', `${room} extra`]]) {
+    await page.getByRole('button', { name: 'Criar horário' }).click();
+    await dialog.getByLabel('Dia da semana').selectOption(weekday);
+    await dialog.getByLabel('Início', { exact: true }).fill('08:00');
+    await dialog.getByLabel('Fim').fill('09:00');
+    await dialog.getByLabel('Sala', { exact: true }).fill(label);
+    await page.setViewportSize({ width: 390, height: 1000 });
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+    await page.screenshot({ path: `test-results/horario-form-${info.project.name}-390.png` });
+    await dialog.getByRole('button', { name: 'Salvar horário' }).click();
+    await expect(dialog).not.toBeVisible();
+  }
+  const first = page.locator('article').filter({ has: page.getByRole('heading', { name: 'Segunda · 08:00–09:00' }) });
+  await first.getByRole('button', { name: 'Editar horário' }).click();
+  await dialog.getByLabel('Pacientes simultâneos').fill('2');
+  await dialog.getByRole('button', { name: 'Salvar horário' }).click();
+  await expect(first).toContainText('0/2 pacientes fixos');
+  await page.getByRole('link', { name: 'Pacientes', exact: true }).click();
+  await page.getByRole('button', { name: 'Cadastrar pessoa' }).click();
+  await dialog.getByLabel('Nome completo').fill(`Paciente da grade ${unique}`);
+  await dialog.getByLabel('E-mail', { exact: true }).fill(`grade-${unique}@example.test`);
+  await dialog.getByLabel('Telefone').fill('81999990000');
+  await dialog.getByLabel('Data de nascimento').fill('1990-01-01');
+  await dialog.getByLabel('Senha inicial').fill(password);
+  await dialog.getByLabel('Horário fixo inicial').selectOption({ label: `Segunda · 08:00 · ${room}` });
+  await dialog.getByRole('button', { name: 'Salvar cadastro' }).click();
+  await expect(dialog).not.toBeVisible();
+  await page.getByRole('link', { name: 'Grade de horários' }).click();
+  await expect(first).toContainText('1/2 pacientes fixos');
+  const second = page.locator('article').filter({ hasText: `${room} extra` });
+  await second.getByRole('button', { name: 'Alocar paciente' }).click();
+  await dialog.getByRole('combobox', { name: 'Paciente', exact: true }).selectOption({ label: `Paciente da grade ${unique}` });
+  await dialog.getByRole('button', { name: 'Confirmar alocação' }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(second).toContainText('1/1 pacientes fixos');
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 1000 });
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.screenshot({ path: `test-results/grade-${info.project.name}-${width}.png`, fullPage: true });
+  }
+  await second.getByRole('button', { name: 'Liberar horário fixo' }).click();
+  await expect(dialog).toContainText('Consultas já confirmadas e reposições serão preservadas.');
+  await dialog.getByLabel('Motivo da liberação').fill('Liberação solicitada pelo paciente de teste');
+  await dialog.getByRole('button', { name: 'Confirmar liberação', exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(second).toContainText('0/1 pacientes fixos');
+});

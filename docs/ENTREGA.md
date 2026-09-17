@@ -1,3 +1,11 @@
+## Grade semanal e alocações — 2026-09-17
+
+- Grade própria do terapeuta com criação/edição, sala, faixa etária e capacidade; alocação com exceção etária explícita e liberação manual com motivo. Consultas confirmadas e reposições são preservadas.
+- Alterações de horário com vínculos/histórico futuro são recusadas; conflitos de agenda do paciente e redução de capacidade competem com alocação e reserva sob o lock existente. Mudança de sala gera notificação pela outbox.
+- Build/lint passaram; lifecycle e 24 testes backend passaram em PostgreSQL real. Quatro cenários Playwright passaram em Chromium/Firefox (grade e superfícies compartilhadas), com axe e capturas 390/1440 inspecionadas. A primeira rodada foi afetada pelo reinício da API durante compilação; repetição passou.
+- Revisão de complexidade: mesmos componentes, transação, auditoria e outbox; sem dependências ou migration. Revisão separada de correção/autorização/concorrência: escopo de clínica e terapeuta, preservação de confirmadas, idempotência e disputas de capacidade cobertos.
+- Limites: reativar alocação não restaura consultas canceladas; reativação de sessão bloqueada (RF-CLI-10), exceções recorrentes de férias e edição de horários já ocupados ainda não entregues por esta tela.
+
 # Entrega em andamento
 
 ## Cadastros e acompanhamento — 2026-09-17

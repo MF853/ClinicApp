@@ -1,9 +1,64 @@
 import { BadRequestException, ConflictException } from '@nestjs/common';
 import { DateTime } from 'luxon';
-import { type Context, type Tx, now, audit } from '../../infrastructure/db.js';
+import { type Context, type Tx, now, audit, notify } from '../../infrastructure/db.js';
 import { roles } from '../../infrastructure/access.js';
 import { confirmationWindow, ageAt } from '../../infrastructure/time.js';
-import { occupancy } from '../fitting/fitting.js';
+import type { SlotDto } from '../api/dto.js';
+import { occupiedStates, occupancy } from '../fitting/fitting.js';
+export async function saveSlot(tx: Tx, ctx: Context, values: SlotDto, id?: string, at = now()) {
+  roles(ctx, 'THERAPIST');
+  if (values.endMinute <= values.startMinute || values.maxAge < values.minAge || !values.room.trim()) throw new BadRequestException('Revise horários, sala e faixa etária.');
+  const before = id ? await tx.slot.findFirstOrThrow({ where: { id, clinicId: ctx.clinicId, therapistId: ctx.id } }) : null;
+  const siblings = await tx.slot.findMany({ where: { clinicId: ctx.clinicId, therapistId: ctx.id, weekday: values.weekday, ...(id ? { id: { not: id } } : {}) } });
+  if (siblings.some(s => s.minute < values.endMinute && s.minute + s.duration > values.startMinute)) throw new ConflictException('Este intervalo se sobrepõe a outro horário da sua grade.');
+  const data = { weekday: values.weekday, minute: values.startMinute, duration: values.endMinute - values.startMinute, room: values.room.trim(), minAge: values.minAge, maxAge: values.maxAge, capacity: values.capacity };
+  if (before) {
+    const fixed = await tx.fixedAssignment.findMany({ where: { clinicId: ctx.clinicId, slotId: id, active: true } });
+    if (fixed.length > values.capacity) throw new ConflictException('A capacidade não pode ser menor que a quantidade de pacientes fixos.');
+    const future = await tx.occurrence.findMany({ where: { clinicId: ctx.clinicId, slotId: id, endsAt: { gt: at } } });
+    for (const o of future) if (await occupancy(tx, o.id) > values.capacity) throw new ConflictException('A capacidade não pode ser menor que as consultas e reservas existentes.');
+    const moved = before.weekday !== data.weekday || before.minute !== data.minute || before.duration !== data.duration;
+    if (moved) {
+      const scope = { clinicId: ctx.clinicId, occurrenceId: { in: future.map(o => o.id) } };
+      if (fixed.length || future.some(o => o.blocked || o.startsAt <= at) || await tx.appointment.count({ where: scope }) || await tx.reservation.count({ where: scope }) || await tx.fittingRequest.count({ where: scope })) throw new ConflictException('Este horário tem pacientes, histórico futuro ou bloqueios. Preserve esses atendimentos e crie um novo horário.');
+      await tx.occurrence.deleteMany({ where: { id: { in: future.map(o => o.id) }, clinicId: ctx.clinicId } });
+    }
+    if (before.minAge !== data.minAge || before.maxAge !== data.maxAge) {
+      const patients = await tx.membership.findMany({ where: { id: { in: fixed.map(f => f.patientId) }, clinicId: ctx.clinicId } });
+      if (patients.some(p => !p.birthDate || ageAt(p.birthDate, at, ctx.clinic.timezone) < data.minAge || ageAt(p.birthDate, at, ctx.clinic.timezone) > data.maxAge)) throw new ConflictException('A nova faixa etária exclui pacientes fixos. Revise as alocações antes de alterar a restrição.');
+    }
+  }
+  const slot = before ? await tx.slot.update({ where: { id }, data }) : await tx.slot.create({ data: { ...data, clinicId: ctx.clinicId, therapistId: ctx.id } });
+  await materialize(tx, ctx, at);
+  await audit(tx, ctx, before ? 'slot-updated' : 'slot-created', slot.id, { before: before ? { weekday: before.weekday, minute: before.minute, duration: before.duration, room: before.room, minAge: before.minAge, maxAge: before.maxAge, capacity: before.capacity } : null, after: data });
+  if (before && before.room !== slot.room) {
+    const future = await tx.occurrence.findMany({ where: { slotId: slot.id, clinicId: ctx.clinicId, startsAt: { gt: at } }, select: { id: true } });
+    const appointments = await tx.appointment.findMany({ where: { clinicId: ctx.clinicId, occurrenceId: { in: future.map(o => o.id) }, status: { in: [...occupiedStates] } } });
+    const patients = await tx.membership.findMany({ where: { id: { in: appointments.map(a => a.patientId) }, clinicId: ctx.clinicId, active: true } });
+    for (const p of patients) await notify(tx, ctx, p.userId, 'schedule-changed', `${slot.id}:${at.toISOString()}`);
+  }
+  return slot;
+}
+
+export async function releaseAssignment(tx: Tx, ctx: Context, slotId: string, patientId: string, reason: string, at = now()) {
+  roles(ctx, 'ADMIN', 'THERAPIST');
+  if (reason.trim().length < 5) throw new BadRequestException('Informe o motivo da liberação.');
+  const slot = await tx.slot.findFirstOrThrow({ where: { id: slotId, clinicId: ctx.clinicId, ...(ctx.role === 'THERAPIST' ? { therapistId: ctx.id } : {}) } });
+  const fixed = await tx.fixedAssignment.findFirstOrThrow({ where: { slotId, patientId, clinicId: ctx.clinicId } });
+  if (!fixed.active) return { ok: true };
+  await tx.fixedAssignment.update({ where: { id: fixed.id }, data: { active: false } });
+  const future = await tx.occurrence.findMany({ where: { slotId, clinicId: ctx.clinicId, startsAt: { gt: at } }, select: { id: true } });
+  const pending = await tx.appointment.findMany({ where: { clinicId: ctx.clinicId, patientId, occurrenceId: { in: future.map(o => o.id) }, origin: 'FIXED', status: { in: ['SCHEDULED', 'PENDING', 'EXPIRED'] } } });
+  for (const a of pending) {
+    await tx.appointment.update({ where: { id: a.id }, data: { status: 'CANCELLED', cancelledAt: at } });
+    await audit(tx, ctx, 'fixed-appointment-cancelled', a.id, { before: a.status, after: 'CANCELLED', assignmentId: fixed.id });
+  }
+  await audit(tx, ctx, 'fixed-released', fixed.id, { reason: reason.trim(), cancelled: pending.length });
+  const recipients = await tx.membership.findMany({ where: { clinicId: ctx.clinicId, id: { in: [patientId, slot.therapistId] }, active: true } });
+  for (const p of recipients) await notify(tx, ctx, p.userId, 'fixed-released', `${fixed.id}:${at.toISOString()}`);
+  return { ok: true };
+}
+
 export async function materialize(tx: Tx, ctx: Context, at = now()) {
   const therapists = await tx.membership.findMany({ where: { clinicId: ctx.clinicId, role: 'THERAPIST', active: true }, select: { id: true } });
   const slots = await tx.slot.findMany({ where: { clinicId: ctx.clinicId, blocked: false, therapistId: { in: therapists.map(t => t.id) } } });
@@ -35,6 +90,14 @@ export async function assign(tx: Tx, ctx: Context, slotId: string, patientId: st
   if (slot.blocked || await tx.fixedAssignment.count({ where: { slotId, active: true } }) >= slot.capacity) throw new ConflictException('Este slot está bloqueado ou com capacidade esgotada.');
   const occurrences = await tx.occurrence.findMany({ where: { slotId, clinicId: ctx.clinicId, startsAt: { gt: at }, blocked: false } });
   for (const o of occurrences) if (await occupancy(tx, o.id) >= slot.capacity) throw new ConflictException('Uma ocorrência futura já está ocupada ou reservada.');
+  const otherFixed = await tx.fixedAssignment.findMany({ where: { patientId, clinicId: ctx.clinicId, active: true, slotId: { not: slotId } } });
+  const otherSlots = await tx.slot.findMany({ where: { id: { in: otherFixed.map(f => f.slotId) }, weekday: slot.weekday } });
+  if (otherSlots.some(s => s.minute < slot.minute + slot.duration && s.minute + s.duration > slot.minute)) throw new ConflictException('O paciente já possui outro horário fixo neste intervalo.');
+  for (const o of occurrences) {
+    const overlaps = await tx.occurrence.findMany({ where: { clinicId: ctx.clinicId, id: { not: o.id }, startsAt: { lt: o.endsAt }, endsAt: { gt: o.startsAt } }, select: { id: true } });
+    const scope = { clinicId: ctx.clinicId, patientId, occurrenceId: { in: overlaps.map(x => x.id) } };
+    if (await tx.appointment.count({ where: { ...scope, status: { in: [...occupiedStates] } } }) || await tx.reservation.count({ where: { ...scope, active: true } })) throw new ConflictException('O paciente já possui consulta ou reserva neste intervalo.');
+  }
   const result = await tx.fixedAssignment.upsert({ where: { slotId_patientId: { slotId, patientId } }, create: { slotId, patientId, clinicId: ctx.clinicId }, update: { active: true } });
   await materialize(tx, ctx, at); await audit(tx, ctx, 'fixed-assigned', result.id, { exception: mismatch, reason }); return result;
 }

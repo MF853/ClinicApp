@@ -1,13 +1,10 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { api, date, roleNames, useAction, type Member, type Absence } from '../api';
+import { api, date, roleNames, useAction, weekdays, minuteTime, type Member, type Absence } from '../api';
 import { Badge, Button, Field, Loading, Message, Modal } from '../components/ui';
 import s from '../styles/app.module.css';
 
 export interface Person { id: string; role: Member['role']; active: boolean; absenceLimit: number | null; justificationDays: number | null; registration: string; user: { name: string; email: string; phone: string } }
-const weekdays = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
-const time = (v: number) => `${String(Math.floor(v / 60)).padStart(2, '0')}:${String(v % 60).padStart(2, '0')}`;
-
 function CreatePerson({ ctx, onClose }: { ctx: Member; onClose: () => void }) {
   const action = useAction(), [role, setRole] = useState('PATIENT'), [exception, setException] = useState(false);
   const slots = useQuery({ queryKey: ['slots', ctx.id], enabled: ctx.role === 'THERAPIST', queryFn: () => api<{ id: string; weekday: number; minute: number; room: string; blocked: boolean }[]>('/slots') });
@@ -26,7 +23,7 @@ function CreatePerson({ ctx, onClose }: { ctx: Member; onClose: () => void }) {
     {role === 'THERAPIST' && <Field label="Registro profissional"><input name="registration" required maxLength={60} /></Field>}
     <Field label="Senha inicial" hint="Mínimo de 12 caracteres. Informe a senha à pessoa por um canal seguro."><input name="password" type="password" autoComplete="new-password" required minLength={12} maxLength={128} /></Field>
     {ctx.role === 'THERAPIST' && <>
-      <Field label="Horário fixo inicial"><select name="slotId" required><option value="">Selecione um horário da sua grade</option>{slots.data?.filter(x => !x.blocked).map(x => <option key={x.id} value={x.id}>{weekdays[x.weekday]} · {time(x.minute)} · {x.room}</option>)}</select></Field>
+      <Field label="Horário fixo inicial"><select name="slotId" required><option value="">Selecione um horário da sua grade</option>{slots.data?.filter(x => !x.blocked).map(x => <option key={x.id} value={x.id}>{weekdays[x.weekday]} · {minuteTime(x.minute)} · {x.room}</option>)}</select></Field>
       {slots.error && <Message error>{slots.error.message}</Message>}
       <Field label="Exceção de faixa etária"><select value={String(exception)} onChange={e => setException(e.target.value === 'true')}><option value="false">Respeitar a faixa etária</option><option value="true">Confirmo a exceção de faixa etária</option></select></Field>
       {exception && <Field label="Justificativa da exceção"><textarea name="reason" required minLength={5} maxLength={1000} /></Field>}

@@ -19,3 +19,5 @@ export class PatientParametersDto {
   @ValidateIf((_o, value) => value !== null) @IsInt() @Min(1) @Max(100) absenceLimit!: number | null;
   @ValidateIf((_o, value) => value !== null) @IsInt() @Min(1) @Max(30) justificationDays!: number | null;
 }
+
+export class ReasonDto { @IsString() @MinLength(5) @MaxLength(1000) reason!: string; }
