@@ -1,22 +1,24 @@
 # ClinicApp
 
-Aplicação clínica em desenvolvimento, com API NestJS e regras transacionais testadas. O frontend e os processos assíncronos ainda não estão disponíveis neste primeiro marco. Estado verificável e limitações em [docs/ENTREGA.md](docs/ENTREGA.md).
+Aplicação clínica em desenvolvimento, com frontend React, API NestJS e worker separado. Estado verificável e limitações em [docs/ENTREGA.md](docs/ENTREGA.md).
 
-## Preparar o backend local
+## Executar localmente
 
-Requisitos: Node 24 LTS, npm 11, Docker/Compose. Não use dados reais.
+Requisitos: Node 24 LTS, npm 11, Docker/Compose com o daemon iniciado. Não use dados reais.
 
 ```sh
 npm ci --ignore-scripts
-cp .env.example .env
-docker compose up -d --wait
-npm run db:generate
-npm run db:migrate
-npm run build -w @clinic/backend
-npm run start -w @clinic/backend
+cp -n .env.example .env
+npm run dev
 ```
 
-API: http://127.0.0.1:3000/api/v1 · OpenAPI: /api/v1/docs · readiness: /api/v1/health/ready. O login exigirá cadastro/seed, ainda em implementação.
+`npm run dev` inicia a infraestrutura com `docker compose up -d --wait`, gera o cliente Prisma, aplica migrations e executa o seed fictício antes de iniciar API, worker e frontend. Uma falha na preparação interrompe a inicialização. O seed preserva usuários existentes e suas senhas.
+
+Frontend: http://localhost:5173 · API: http://127.0.0.1:3000/api/v1 · OpenAPI: /api/v1/docs · readiness: /api/v1/health/ready.
+
+Contas demonstrativas: `admin@example.test`, `terapeuta@example.test`, `recepcao@example.test` e `paciente@example.test`. Senha inicial: `ClinicApp!2026`.
+
+Use Ctrl+C para encerrar a aplicação. A infraestrutura permanece disponível; para pará-la sem apagar dados, execute `docker compose stop`.
 
 ```sh
 npm run db:test:prepare
@@ -27,7 +29,7 @@ npm run lint -w @clinic/backend
 
 Testes usam banco clinicapp_test separado. PostgreSQL 55432; MinIO 59000 (console 59001); Mailpit 58025 (SMTP 51025); ClamAV 53310. Consulte `docker compose ps` e `docker compose logs SERVICO`. Nenhum serviço externo foi contratado ou publicado.
 
-Scripts de frontend, seed e worker foram definidos como alvo de execução e ainda não funcionam neste marco. Não confundir configuração com integração pronta.
+Para verificar a ordem da preparação e a interrupção em caso de falha sem iniciar serviços: `node --test scripts/dev.test.mjs`.
 
 ## Antes de dados reais
 

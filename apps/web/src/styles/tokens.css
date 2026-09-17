@@ -1,0 +1,79 @@
+:root {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  font-synthesis: none;
+  color: var(--ink);
+  background: var(--surface);
+  --purple: #845ec2;
+  --lilac: #c493ff;
+  --cream: #fefedf;
+  --sand: #d5cabd;
+  --surface: #f2ede7;
+  --ink: #292332;
+  --panel: #fffdf9;
+  --accent-ink: #442369;
+  --border: #a99b8b;
+  --control-border: #786a5d;
+  --light: #fffdf9;
+  --shadow: #d6cdc2;
+  --raised: 7px 7px 16px var(--shadow), -7px -7px 16px var(--light);
+  --raised-small: 3px 3px 7px var(--shadow), -3px -3px 7px var(--light);
+  --inset: inset 3px 3px 7px var(--shadow), inset -3px -3px 7px var(--light);
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --green: #1a7a4a;
+  --green-bg: #e6f4ed;
+  --yellow: #8a6800;
+  --yellow-bg: #fff8e1;
+  --red: #b53a2f;
+  --red-bg: #fdeceb;
+  --blue: #1f4e79;
+  --blue-bg: #e8eff8;
+  --gray: #554d5c;
+  --gray-bg: #f8f7f4;
+  --radius: 12px;
+  --panel-radius: 20px;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+button, input, select, textarea { font: inherit; }
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: 1; color: var(--gray); background: var(--sand); border-color: var(--control-border); box-shadow: none; }
+a { color: var(--accent-ink); text-underline-offset: 3px; }
+:focus-visible { outline: 3px solid var(--accent-ink); outline-offset: 4px; }
+h1, h2, h3, p { margin-top: 0; }
+h1 { font-size: 28px; line-height: 1.2; letter-spacing: -.6px; margin-bottom: 8px; }
+h2 { font-size: 20px; line-height: 1.3; }
+h3 { font-size: 16px; }
+input, select, textarea {
+  max-width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: var(--inset);
+  color: inherit;
+  accent-color: var(--purple);
+}
+input::placeholder, textarea::placeholder { color: var(--gray); opacity: 1; }
+input[type=file] { width: 100%; font-size: 14px; }
+input::file-selector-button { padding: 8px; border: 1px solid var(--control-border); border-radius: 8px; background: var(--cream); color: var(--ink); margin-right: 8px; }
+textarea { resize: vertical; min-height: 100px; }
+small { font-size: 14px; color: var(--gray); }
+::selection { background: var(--lilac); color: var(--ink); }
+@media (prefers-reduced-motion: reduce) {
+  * { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
+}
+@media (forced-colors: active) {
+  button, a, input, select, textarea { box-shadow: none !important; }
+  :focus-visible { outline-color: Highlight; }
+}

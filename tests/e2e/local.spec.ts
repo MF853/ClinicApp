@@ -1,0 +1,31 @@
+import { test, expect } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
+const credentials = { email: 'paciente@example.test', password: 'ClinicApp!2026' };
+test('login: campos obrigatórios, erro de credenciais e teclado', async ({ page }) => { await page.goto('/entrar'); await page.getByRole('button', { name: 'Entrar', exact: true }).click(); await expect(page.getByLabel('E-mail')).toBeFocused(); await page.getByLabel('E-mail').fill('inexistente@example.test'); await page.getByLabel('Senha', { exact: true }).fill('senha-incorreta'); await page.getByRole('button', { name: 'Entrar', exact: true }).click(); await expect(page.getByRole('alert')).toContainText('não conferem'); expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]); });
+test('login: referência visual estável', async ({ page }) => { await page.setViewportSize({ width: 390, height: 844 }); await page.goto('/entrar'); await expect(page.getByRole('heading', { name: 'Bem-vindo de volta' })).toBeVisible(); await expect(page).toHaveScreenshot('login-390.png', { animations: 'disabled' }); });
+for (const width of [320, 390, 768, 1440]) test(`paciente: login, agenda e foco a ${width}px`, async ({ page }) => { await page.setViewportSize({ width, height: 900 }); await page.goto('/entrar'); await page.getByLabel('E-mail').fill(credentials.email); await page.getByLabel('Senha', { exact: true }).fill(credentials.password); await page.getByRole('button', { name: 'Entrar', exact: true }).click(); await expect(page.getByRole('heading', { name: 'Minhas consultas' })).toBeVisible(); await expect(page.getByRole('button', { name: 'Ver consulta' }).first()).toBeVisible(); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); await page.screenshot({ path: `test-results/paciente-${width}.png`, fullPage: true }); await page.screenshot({ path: `test-results/paciente-viewport-${width}.png` }); await page.getByRole('button', { name: 'Ver consulta' }).first().click(); await expect(page.getByRole('dialog')).toBeVisible(); await page.screenshot({ path: `test-results/consulta-${width}.png` }); await page.keyboard.press('Escape'); await expect(page.getByRole('dialog')).not.toBeVisible(); await expect(page.getByRole('button', { name: 'Ver consulta' }).first()).toBeFocused(); await page.getByRole('button', { name: 'Ver consulta' }).first().click(); await page.getByRole('button', { name: 'Fechar diálogo' }).click(); await expect(page.getByRole('button', { name: 'Ver consulta' }).first()).toBeFocused(); expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]); });
+test('recepção: documentos clínicos bloqueados pelo backend', async ({ page }) => { await page.goto('/entrar'); await page.getByLabel('E-mail').fill('recepcao@example.test'); await page.getByLabel('Senha', { exact: true }).fill(credentials.password); await page.getByRole('button', { name: 'Entrar', exact: true }).click(); await expect(page.getByRole('heading', { name: 'Agenda da clínica' })).toBeVisible(); expect((await page.request.get('/api/v1/certificates')).status()).toBe(403); expect((await page.request.get('/api/v1/certificates/00000000-0000-4000-8000-000000000001')).status()).toBe(403); await page.goto('/justificativas'); await expect(page.getByRole('alert')).toContainText('não tem permissão'); });
+test('terapeuta: grade semanal vira linha do tempo diária', async ({ page }) => { await page.setViewportSize({ width: 1440, height: 1000 }); await page.goto('/entrar'); await page.getByLabel('E-mail').fill('terapeuta@example.test'); await page.getByLabel('Senha', { exact: true }).fill(credentials.password); await page.getByRole('button', { name: 'Entrar', exact: true }).click(); await expect(page.getByRole('heading', { name: 'Minha agenda' })).toBeVisible(); await expect(page.locator('thead th:visible')).toHaveCount(8); await page.screenshot({ path: 'test-results/terapeuta-1440.png', fullPage: true }); await page.setViewportSize({ width: 390, height: 844 }); await expect(page.locator('thead th:visible')).toHaveCount(2); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); await page.screenshot({ path: 'test-results/terapeuta-390.png', fullPage: true }); expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]); });
+
+test('paciente: confirma e desmarca consulta pela interface real', async ({ page }) => {
+  await page.goto('/entrar');
+  await page.getByLabel('E-mail').fill(credentials.email);
+  await page.getByLabel('Senha', { exact: true }).fill(credentials.password);
+  await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Minhas consultas' })).toBeVisible();
+  const card = page.locator('article').filter({ has: page.getByText('Pendente', { exact: true }) }).first();
+  test.skip(await card.count() === 0, 'O seed não tem consulta com janela aberta neste momento.');
+  await card.getByRole('button', { name: 'Ver consulta' }).click();
+  const response = page.waitForResponse(r => r.url().endsWith('/respond') && r.request().method() === 'POST');
+  await page.getByRole('button', { name: 'Confirmar presença', exact: true }).click();
+  expect((await response).ok()).toBe(true);
+  await expect(page.getByRole('dialog')).not.toBeVisible();
+  const confirmed = page.locator('article').filter({ has: page.getByText('Confirmada', { exact: true }) }).first();
+  await confirmed.getByRole('button', { name: 'Ver consulta' }).click();
+  await page.getByRole('button', { name: 'Desmarcar consulta' }).click();
+  await expect(page.getByRole('dialog')).toContainText('não será contabilizada como falta');
+  const cancelled = page.waitForResponse(r => r.url().endsWith('/respond') && r.request().method() === 'POST');
+  await page.getByRole('button', { name: 'Confirmar desmarcação' }).click();
+  expect((await cancelled).ok()).toBe(true);
+  await expect(page.getByRole('dialog')).not.toBeVisible();
+});
