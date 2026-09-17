@@ -1,5 +1,14 @@
 # Rastreabilidade
 
+## Cadastros e acompanhamento — 2026-09-17
+
+| Requisitos | Implementação | Evidência / limite |
+|---|---|---|
+| RF-ADM-01/02/07/11 | `members.ts`, `Members.tsx`: cadastro, alocação inicial pelo terapeuta, desvinculação e reativação | `members.test.ts` + `members.spec.ts`; convites/contas externas pendentes |
+| RF-CLI-03, RN-17/26 | Parâmetros individuais anuláveis para herdar padrão, auditados | Teste de valores efetivos, prazo futuro e preservação de prazos concedidos |
+| RF-TER-11 | Histórico com status, prazo e contador na interface | Testes de superfícies e inspeção visual |
+| RNF-46, RN-21 | Isolamento, lock compartilhado e preservação de confirmadas | HTTP e concorrência desvincular/alocar em PostgreSQL real |
+
 ## Organização e tipografia — 2026-09-17
 
 | Item | Implementação | Evidência |

@@ -1,5 +1,13 @@
 # Entrega em andamento
 
+## Cadastros e acompanhamento — 2026-09-17
+
+- RF-ADM-01/02/07/11: cadastro de pacientes, terapeutas e recepção pela clínica, cadastro de paciente pelo terapeuta com alocação atômica na própria grade, busca por nome/e-mail, filtros de perfil e reativação/desvinculação com motivo. Convites e vinculação de contas preexistentes em outra clínica permanecem pendentes.
+- RF-CLI-03 e RF-TER-11: parâmetros individuais com retorno ao padrão por campo vazio e histórico de faltas com prazos/status. Parâmetros novos não reescrevem prazos já concedidos.
+- Desvinculação verifica horários fixos, consultas futuras e reservas sob o lock da clínica, sem cancelamento implícito; revoga somente sessões daquele vínculo. Terapeuta inativo não gera novas ocorrências nem recebe alocações/encaixes.
+- Build/lint passaram; 19 testes backend + lifecycle passaram com PostgreSQL real. Novos testes cobrem HTTP/DTO, hash de senha, rollback do cadastro/alocação, isolamento, perfis, sobrescrita/herança de parâmetros e concorrência desvincular/alocar. Quatro cenários Playwright passaram em Chromium/Firefox (fluxo novo e superfícies compartilhadas); axe sem violações nos cenários cobertos, capturas 320/390/1440 inspecionadas.
+- Revisão de complexidade: reutilizados Membership, lock, auditoria, componentes e queries; sem migration ou dependências novas. Revisão separada de correção/autorização/integridade: contexto obtido da sessão, confirmação explícita do vínculo, consultas confirmadas preservadas, senha ausente de respostas/auditoria, falha de alocação reverte também a conta. Documento de requisitos inalterado.
+
 ## Organização do repositório e New Zen — 2026-09-17
 
 - Remote `origin`: https://github.com/MF853/ClinicApp.git. Histórico remoto inicial `136e0d1` integrado por merge, preservando a implementação local; sem force push. Estrutura superior do remoto adotada: `backend/` e `frontend/`. Esqueleto anterior Expo/SQLite não substitui a stack React/Vite/Capacitor/PostgreSQL definida nos requisitos. Referências históricas abaixo a `apps/backend` e `apps/web` correspondem aos novos diretórios.

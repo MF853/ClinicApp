@@ -13,6 +13,7 @@ export async function eligible(tx: Tx, ctx: Context, originalId: string, occurre
   const o = await tx.occurrence.findFirst({ where: { id: occurrenceId, clinicId: ctx.clinicId } }); if (!o) throw new NotFoundException();
   const slot = await tx.slot.findUniqueOrThrow({ where: { id: o.slotId } });
   if (slot.therapistId !== original.slot.therapistId || o.blocked || slot.blocked || o.startsAt <= at || (slot.capacity > 1 && !slot.groupOffering)) throw new ConflictException('Este horário não está disponível para encaixe.');
+  if (!await tx.membership.findFirst({ where: { id: slot.therapistId, clinicId: ctx.clinicId, role: 'THERAPIST', active: true } })) throw new ConflictException('O terapeuta não está ativo nesta clínica.');
   const p = await tx.membership.findFirstOrThrow({ where: { id: original.patientId, clinicId: ctx.clinicId, active: true } });
   const age = p.birthDate ? ageAt(p.birthDate, o.startsAt, ctx.clinic.timezone) : null;
   if (age === null || age < slot.minAge || age > slot.maxAge) throw new ConflictException('Este horário não atende à faixa etária do paciente.');

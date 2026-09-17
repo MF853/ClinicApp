@@ -1,0 +1,54 @@
+import { test, expect } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
+
+test('cadastro, parâmetros por paciente e ciclo de vínculo pela interface', async ({ page }, info) => {
+  const unique = `${info.project.name}-${Date.now()}`;
+  await page.goto('/entrar');
+  await page.getByLabel('E-mail', { exact: true }).fill('admin2@example.test');
+  await page.getByLabel('Senha', { exact: true }).fill('ClinicApp!2026');
+  await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+  await page.getByRole('link', { name: 'Pacientes', exact: true }).click();
+  await page.getByRole('button', { name: 'Cadastrar pessoa' }).click();
+  const dialog = page.getByRole('dialog');
+  for (const width of [320, 1440]) {
+    await page.setViewportSize({ width, height: 1000 });
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+    expect(await dialog.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+    await page.screenshot({ path: `test-results/cadastro-${info.project.name}-${width}.png` });
+  }
+  await dialog.getByLabel('Nome completo').fill(`Paciente teste ${unique}`);
+  await dialog.getByLabel('E-mail', { exact: true }).fill(`${unique}@example.test`);
+  await dialog.getByLabel('Telefone').fill('81999990000');
+  await dialog.getByLabel('Data de nascimento').fill('1990-01-01');
+  await dialog.getByLabel('Senha inicial').fill('Senha-ficticia!2026');
+  await dialog.getByRole('button', { name: 'Salvar cadastro' }).click();
+  await expect(dialog).not.toBeVisible();
+  await page.getByLabel('Buscar por nome ou e-mail').fill(unique);
+  const card = page.locator('article').filter({ hasText: unique });
+  await expect(card).toHaveCount(1);
+  await card.getByRole('button', { name: 'Ver acompanhamento' }).click();
+  await expect(dialog).toContainText('Nenhuma falta registrada.');
+  await dialog.getByLabel('Limite de faltas do paciente').fill('5');
+  await dialog.getByLabel('Prazo individual em dias úteis').fill('6');
+  await dialog.getByRole('button', { name: 'Salvar parâmetros individuais' }).click();
+  await expect(dialog).toContainText('0 de 5 faltas');
+  await dialog.getByLabel('Limite de faltas do paciente').fill('');
+  await dialog.getByLabel('Prazo individual em dias úteis').fill('');
+  await dialog.getByRole('button', { name: 'Salvar parâmetros individuais' }).click();
+  await expect(dialog).toContainText('0 de 3 faltas');
+  await page.setViewportSize({ width: 390, height: 1000 });
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.screenshot({ path: `test-results/acompanhamento-${info.project.name}-390.png` });
+  await dialog.getByRole('button', { name: 'Desvincular da clínica' }).click();
+  await expect(dialog).toContainText('O histórico será preservado.');
+  await dialog.getByLabel('Motivo da alteração do vínculo').fill('Fim do vínculo de teste');
+  await dialog.getByRole('button', { name: 'Confirmar desvinculação' }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(card).toContainText('Inativo');
+  await card.getByRole('button', { name: 'Ver acompanhamento' }).click();
+  await dialog.getByRole('button', { name: 'Reativar vínculo' }).click();
+  await dialog.getByLabel('Motivo da alteração do vínculo').fill('Retorno do paciente de teste');
+  await dialog.getByRole('button', { name: 'Confirmar reativação' }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(card).toContainText('Ativo');
+});

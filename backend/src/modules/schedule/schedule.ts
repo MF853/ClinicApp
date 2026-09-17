@@ -5,7 +5,8 @@ import { roles } from '../../infrastructure/access.js';
 import { confirmationWindow, ageAt } from '../../infrastructure/time.js';
 import { occupancy } from '../fitting/fitting.js';
 export async function materialize(tx: Tx, ctx: Context, at = now()) {
-  const slots = await tx.slot.findMany({ where: { clinicId: ctx.clinicId, blocked: false } });
+  const therapists = await tx.membership.findMany({ where: { clinicId: ctx.clinicId, role: 'THERAPIST', active: true }, select: { id: true } });
+  const slots = await tx.slot.findMany({ where: { clinicId: ctx.clinicId, blocked: false, therapistId: { in: therapists.map(t => t.id) } } });
   for (let day = 0; day < 28; day++) {
     const date = DateTime.fromJSDate(at, { zone: ctx.clinic.timezone }).startOf('day').plus({ days: day });
     for (const slot of slots.filter(s => s.weekday === date.weekday % 7)) {
@@ -26,6 +27,7 @@ export async function assign(tx: Tx, ctx: Context, slotId: string, patientId: st
   roles(ctx, 'THERAPIST', 'ADMIN', 'RECEPTION');
   const p = await tx.membership.findFirstOrThrow({ where: { id: patientId, clinicId: ctx.clinicId, role: 'PATIENT', active: true } });
   const slot = await tx.slot.findFirstOrThrow({ where: { id: slotId, clinicId: ctx.clinicId, ...(ctx.role === 'THERAPIST' ? { therapistId: ctx.id } : {}) } });
+  await tx.membership.findFirstOrThrow({ where: { id: slot.therapistId, clinicId: ctx.clinicId, role: 'THERAPIST', active: true } });
   const age = p.birthDate ? ageAt(p.birthDate, at, ctx.clinic.timezone) : null;
   const existing = await tx.fixedAssignment.findUnique({ where: { slotId_patientId: { slotId, patientId } } }); if (existing?.active) return existing;
   const mismatch = age === null || age < slot.minAge || age > slot.maxAge;
