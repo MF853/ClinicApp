@@ -1,5 +1,15 @@
 # Rastreabilidade
 
+## Organização e tipografia — 2026-09-17
+
+| Item | Implementação | Evidência |
+|---|---|---|
+| Estrutura solicitada do GitHub | `backend/`, `frontend/`, workspaces e caminhos atualizados; histórico original integrado | Prisma, migrations, seed, build, lint e inicialização de API/worker/web passaram |
+| Fonte padrão New Zen | `frontend/src/styles/tokens.css`, quatro arquivos locais e licença original | Teste de navegador verifica carregamento dos quatro pesos; capturas desktop/mobile inspecionadas |
+| Preservação funcional | Nenhuma regra clínica alterada pela reorganização | Teste de lifecycle e 15 testes backend em PostgreSQL real; 18 cenários Chromium/Firefox passaram na primeira execução; dois cenários ignorados por janela de confirmação indisponível |
+
+Caminhos `apps/backend` e `apps/web` em registros históricos abaixo correspondem agora a `backend` e `frontend`. Limites e resultados de revalidação em `docs/ENTREGA.md`.
+
 ## Contraste e calendário — 2026-09-16
 
 | Item | Implementação | Evidência |

@@ -8,7 +8,7 @@ Taste v1 (`references/taste/SKILL.md`) aplicada: variação 2, movimento 1, dens
 Referência consultada: `references/cal-DESIGN.md`, Awesome DESIGN.md no commit `8147538b4226ae41e2487a9179e3bcc1f68e8554`. Aproveitados ritmo de 4px, campos nativos contornados e abas claras. Referência descreve sobretudo marketing; nenhuma composição promocional, identidade ou ativo copiado. Airtable foi baixada para comparação, não adotada como segunda linguagem.
 
 ## Tokens reais
-Arquivo: `apps/web/src/styles/tokens.css`. Fonte local do sistema (sans-serif), corpo 16px/1,5; secundário 14px; títulos 28px/1,2 e 20px/1,3. Numerais tabulares na agenda. Espaçamentos 4, 8, 12, 16, 24, 32px. Layout máximo 1440px; barra lateral 232px em desktop; campos e botões mínimo 44px; bordas 1px; raio campo 12px, painel 20px e login 28px.
+Arquivo: `frontend/src/styles/tokens.css`. Fonte padrão New Zen (`--font-sans`), hospedada em `frontend/src/assets/fonts` nos pesos 400/600/700/800, com `font-display: swap` e fallback sans-serif do sistema. Arquivos fornecidos pelo usuário; licença recebida: demo para uso pessoal (`LICENSE.txt`). Corpo 16px/1,5; secundário 14px; títulos 28px/1,2 e 20px/1,3. Numerais tabulares na agenda. Espaçamentos 4, 8, 12, 16, 24, 32px. Layout máximo 1440px; barra lateral 232px em desktop; campos e botões mínimo 44px; bordas 1px; raio campo 12px, painel 20px e login 28px.
 
 | Semântica | Fundo | Texto/borda |
 |---|---|---|

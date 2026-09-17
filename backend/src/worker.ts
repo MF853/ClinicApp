@@ -15,7 +15,7 @@ await boss.start();
 for (const name of ['tick', 'outbox', 'notification', 'attachment', 'password-reset']) await boss.createQueue(name, { retryLimit: 8, retryDelay: 15, retryBackoff: true });
 await ensureBucket();
 await boss.work<{ id: string }>('attachment', async jobs => { for (const job of jobs) await processAttachment(job.data.id); });
-await boss.work<{ id: string }>('notification', async jobs => {  
+await boss.work<{ id: string }>('notification', async jobs => {
 for (const job of jobs) {
     const n = await db.notification.findUnique({ where: { id: job.data.id } }); if (!n || n.sentAt) continue;
     const member = await db.membership.findFirst({ where: { clinicId: n.clinicId, userId: n.userId, active: true } }); if (!member) continue;

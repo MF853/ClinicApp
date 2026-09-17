@@ -13,6 +13,6 @@ Aplicação pessoal de gestão clínica. Fonte funcional: `docs/Documento-de-Req
 - Faça commits locais em marcos verificáveis conforme pedido do usuário. Não inclua .env, auth storage, tokens, relatórios sensíveis ou artefatos de runtime.
 
 ## Limites
-HTTP valida entradas; casos de uso em `apps/backend/src/modules`; infraestrutura compartilhada em `infrastructure`. API não consome filas. Toda escrita que disputa vagas passa pela mesma transação/lock. Vínculo/perfil/clínica vêm da sessão validada, nunca do cliente. Autorização também em downloads, SSE e worker. Não remover auditoria, CSRF, isolamento, idempotência, quarentena, prazos em dias úteis ou confirmação humana.
+HTTP valida entradas; casos de uso em `backend/src/modules`; infraestrutura compartilhada em `infrastructure`. API não consome filas. Toda escrita que disputa vagas passa pela mesma transação/lock. Vínculo/perfil/clínica vêm da sessão validada, nunca do cliente. Autorização também em downloads, SSE e worker. Não remover auditoria, CSRF, isolamento, idempotência, quarentena, prazos em dias úteis ou confirmação humana.
 
 AGENTS.md não instala plugins nem registra ferramentas. Taste foi copiada como instrução local, não instalada como plugin; Ponytail já estava disponível. Não confiar/aprovar hooks automaticamente. Commits das referências: `references/*-commit.txt`; versões executáveis: package-lock.json.

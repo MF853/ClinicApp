@@ -1,11 +1,11 @@
 import {spawnSync} from 'node:child_process';
 import {readFileSync,readdirSync} from 'node:fs';
 import {parseEnv} from 'node:util';
-const env={...parseEnv(readFileSync('../../.env','utf8')),...process.env};
+const env={...parseEnv(readFileSync('../.env','utf8')),...process.env};
 const url=new URL(env.TEST_DATABASE_URL??env.DATABASE_URL);url.pathname='/clinicapp_test';env.DATABASE_URL=url.toString();
 const files=readdirSync('dist/tests').filter(f=>f.endsWith('.test.js')).map(f=>'dist/tests/'+f);
 if(!files.length)throw new Error('Nenhum teste encontrado');
 const args=['--test','--test-concurrency=1',...files];
-const command=process.argv.includes('--coverage')?'../../node_modules/.bin/c8':process.execPath;
+const command=process.argv.includes('--coverage')?'../node_modules/.bin/c8':process.execPath;
 const options=process.argv.includes('--coverage')?['--reporter=text','--reporter=html','--reporter=json-summary','--include=dist/modules/confirmation/*.js','--include=dist/modules/absences/*.js','--include=dist/modules/fitting/*.js',process.execPath,...args]:args;
 const result=spawnSync(command,options,{stdio:'inherit',env});process.exit(result.status??1);

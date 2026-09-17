@@ -34,3 +34,9 @@ Para verificar a ordem da preparação e a interrupção em caso de falha sem in
 ## Antes de dados reais
 
 Resolver pendências de produto/jurídicas, dependências vulneráveis da auditoria inicial, anexos privados e antimalware, gestão dedicada de chaves, HTTPS, observabilidade, backups/PITR e testes de restauração para RPO ≤ 1h/RTO ≤ 4h. Chaves e credenciais de .env.example são exclusivamente demonstrativas. Não existe validação operacional, de usabilidade com pessoas ou conformidade integral.
+
+## Organização e tipografia
+
+`backend/` contém API, worker, Prisma e testes de domínio; `frontend/` contém React/Vite/Capacitor; `scripts/` mantém a execução integrada; `tests/e2e/` contém Playwright. A organização na raiz acompanha o repositório original, cujo histórico foi preservado.
+
+New Zen é a fonte padrão, servida localmente nos pesos usados pela interface. A licença incluída nos arquivos fornecidos é demo para uso pessoal; consulte `frontend/src/assets/fonts/LICENSE.txt`.

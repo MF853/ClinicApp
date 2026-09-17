@@ -1,5 +1,15 @@
 # Entrega em andamento
 
+## Organização do repositório e New Zen — 2026-09-17
+
+- Remote `origin`: https://github.com/MF853/ClinicApp.git. Histórico remoto inicial `136e0d1` integrado por merge, preservando a implementação local; sem force push. Estrutura superior do remoto adotada: `backend/` e `frontend/`. Esqueleto anterior Expo/SQLite não substitui a stack React/Vite/Capacitor/PostgreSQL definida nos requisitos. Referências históricas abaixo a `apps/backend` e `apps/web` correspondem aos novos diretórios.
+- Ajustados workspaces, lockfile e caminhos de execução, Prisma, seed, testes e cobertura. Nenhuma dependência nova. `npm run dev` exercitado com API, worker e frontend na nova estrutura.
+- New Zen hospedada localmente nos pesos 400/600/700/800 do ZIP fornecido pelo usuário, com fallback de sistema e `font-display: swap`. Licença recebida preservada: demo para uso pessoal. DESIGN.md e README atualizados.
+- Prisma generate, migrations, seed, build e lint passaram. `npm test`: teste de lifecycle + 15 testes backend passaram em PostgreSQL real. Cobertura executada: 79,13% de linhas / 81,98% de ramos nos módulos selecionados; não representa cobertura integral da aplicação.
+- Playwright Chromium/Firefox: 18 cenários passaram inicialmente; as duas referências do login divergiram pela troca intencional de fonte. Capturas de login, agenda, consulta e formulários desktop/mobile inspecionadas; referências atualizadas após inspeção e os dois testes reexecutados passaram (20 cenários aprovados no total). Dois cenários de confirmação/desmarcação foram ignorados pela suíte por ausência de consulta com janela aberta. WebKit não foi executado nesta rodada.
+- Revisão de complexidade: renomeação dos diretórios, caminhos existentes e CSS nativo; nenhuma camada/dependência adicionada. Revisão separada de correção, autorização e integridade: configuração de ambiente e comandos conferidos; regras clínicas não alteradas nesta reorganização; testes de CSRF, isolamento, idempotência, auditoria e concorrência passaram.
+- `.env`, configurações locais Serena, relatórios de execução, banco e credenciais de sessão não incluídos nos novos commits. Documento de requisitos preservado.
+
 ## Contraste e grade de calendário — 2026-09-16
 
 - Painéis claros sobre fundo bege, textos secundários mais escuros, contornos visíveis, estados com borda e controles desabilitados sem transparência. Paleta e neumorfismo mantidos; destaque lilás usa texto #442369 após verificação de contraste.

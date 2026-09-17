@@ -1,5 +1,38 @@
+@font-face {
+  font-family: "New Zen";
+  src: url("../assets/fonts/NewZen-Regular.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "New Zen";
+  src: url("../assets/fonts/NewZen-SemiBold.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "New Zen";
+  src: url("../assets/fonts/NewZen-Bold.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "New Zen";
+  src: url("../assets/fonts/NewZen-ExtraBold.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+}
+
 :root {
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: "New Zen", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: var(--font-sans);
   font-size: 16px;
   line-height: 1.5;
   font-synthesis: none;
