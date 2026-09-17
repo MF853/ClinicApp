@@ -1,5 +1,13 @@
 # Rastreabilidade
 
+## Avisos — 2026-09-17
+
+| Requisitos | Implementação | Evidência / limite |
+|---|---|---|
+| RF-CLI-08, RF-COM-02 | `alerts.ts`, `Alerts.tsx`: publicar por público e término, exibir avisos vigentes | `alerts.test.ts`, `alerts.spec.ts`; início imediato, sem agendamento futuro ou canais externos |
+| RNF-46 | Público e clínica filtrados no servidor; criação apenas por administrador; CSRF e auditoria | Integração HTTP real e expiração no limite exato; 26 testes backend passaram |
+
+
 ## Grade semanal — 2026-09-17
 
 | Requisitos | Implementação | Evidência / limite |

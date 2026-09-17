@@ -1,3 +1,10 @@
+## Avisos da clínica — 2026-09-17
+
+- Playwright: publicação, segmentação e desaparecimento ao vencer passaram em Chromium e Firefox; superfícies compartilhadas também passaram nos dois navegadores. Axe sem violações nos cenários cobertos e capturas 390/1440 inspecionadas. Corrigida sincronização de logout no teste; repetição usou contas demonstrativas distintas após atingir o limite de login da conta compartilhada, sem desativar a proteção.
+- RF-CLI-08/RF-COM-02: publicação administrativa para pacientes, terapeutas ou ambos, com término definido e exibição imediata na página Avisos da clínica. Administrador acompanha todos os avisos vigentes da própria clínica; demais perfis recebem apenas o público autorizado. Sem agendamento de início futuro ou entrega por canais externos neste marco.
+- Regras extraídas do controller para `modules/alerts`; mensagem vazia após trim e prazo vencido são recusados. Auditoria registra público e período; sessão define clínica e perfil. Leitura exclui vencidos, inclusive no instante exato do término. UI consulta novamente ao vencer e periodicamente, além da invalidação SSE existente, e reinicia o formulário na troca de vínculo.
+- Build/lint passaram; lifecycle e 26 testes backend passaram em PostgreSQL real. Testes novos cobrem público, isolamento, prazo, DTO, CSRF, acesso anônimo e publicação restrita. Revisão de complexidade: reutilizados Alert, DTO, auditoria, query e componentes existentes; sem dependências ou migration. Revisão separada de correção/autorização: validação HTTP, clínica da sessão, escrita transacional e texto renderizado pelo React sem HTML arbitrário.
+
 ## Grade semanal e alocações — 2026-09-17
 
 - Grade própria do terapeuta com criação/edição, sala, faixa etária e capacidade; alocação com exceção etária explícita e liberação manual com motivo. Consultas confirmadas e reposições são preservadas.

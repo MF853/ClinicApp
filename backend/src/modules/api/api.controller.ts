@@ -8,6 +8,7 @@ import { attendance, countAbsences, consequence, decideCertificate } from '../ab
 import { suggestions, reserve, decideFitting, occupancy } from '../fitting/fitting.js';
 import { schedule, assign, saveSlot, releaseAssignment } from '../schedule/schedule.js';
 import { ResponseDto, AttendanceDto, DecisionDto, ReserveDto, ConsequenceDto, AvailabilityDto, SlotDto, AssignDto, MemberDto, ParametersDto, AlertDto, PrivacyDto, ConsentDto, MemberStatusDto, PatientParametersDto, ReasonDto } from './dto.js';
+import { listAlerts, publishAlert } from '../alerts/alerts.js';
 import { createMember, memberStatus, patientParameters } from '../members/members.js';
 @ApiTags('Clínica')
 @UseGuards(AuthGuard)
@@ -46,8 +47,8 @@ export class ApiController {
   @Post('slots/:id/assign') assign(@Req() r: AuthRequest, @Param('id', ParseUUIDPipe) id: string, @Body() b: AssignDto) { return transaction(r.context, tx => assign(tx, r.context, id, b.patientId, b.exception, b.reason)); }
   @Post('occurrences/:id/block') block(@Req() r: AuthRequest, @Param('id', ParseUUIDPipe) id: string) { roles(r.context, 'THERAPIST'); return transaction(r.context, async tx => { const o = await tx.occurrence.findFirstOrThrow({ where: { id, clinicId: r.context.clinicId } }); await tx.slot.findFirstOrThrow({ where: { id: o.slotId, therapistId: r.context.id, clinicId: r.context.clinicId } }); if (await occupancy(tx, id) > 0) throw new BadRequestException('Resolva consultas e reservas antes de bloquear.'); const result = await tx.occurrence.update({ where: { id }, data: { blocked: !o.blocked } }); await audit(tx, r.context, 'occurrence-block', id, { blocked: result.blocked }); return result; }); }
   @Post('parameters') parameters(@Req() r: AuthRequest, @Body() b: ParametersDto) { roles(r.context, 'ADMIN'); return transaction(r.context, async tx => { const result = await tx.clinic.update({ where: { id: r.context.clinicId }, data: b }); await audit(tx, r.context, 'parameters-updated', r.context.clinicId, { ...b }); return result; }); }
-  @Get('alerts') alerts(@Req() r: AuthRequest) { return db.alert.findMany({ where: { clinicId: r.context.clinicId, endsAt: { gt: new Date() }, audience: { in: ['ALL', r.context.role] } } }); }
-  @Post('alerts') alert(@Req() r: AuthRequest, @Body() b: AlertDto) { roles(r.context, 'ADMIN'); if (new Date(b.endsAt) <= new Date()) throw new BadRequestException('Informe uma data futura.'); return transaction(r.context, async tx => { const result = await tx.alert.create({ data: { ...b, endsAt: new Date(b.endsAt), clinicId: r.context.clinicId } }); await audit(tx, r.context, 'alert-created', result.id); return result; }); }
+  @Get('alerts') alerts(@Req() r: AuthRequest) { return listAlerts(db, r.context); }
+  @Post('alerts') alert(@Req() r: AuthRequest, @Body() b: AlertDto) { return transaction(r.context, tx => publishAlert(tx, r.context, b)); }
   @Get('notifications') notifications(@Req() r: AuthRequest) { return db.notification.findMany({ where: { clinicId: r.context.clinicId, userId: r.context.userId }, orderBy: { createdAt: 'desc' }, take: 50 }); }
   @Post('privacy/requests') privacy(@Req() r: AuthRequest, @Body() b: PrivacyDto) { return db.privacyRequest.create({ data: { userId: r.context.userId, type: b.type } }); }
   @Post('consents') consent(@Req() r: AuthRequest, @Body() b: ConsentDto) { return db.consent.upsert({ where: { userId_document_version: { userId: r.context.userId, ...b } }, create: { userId: r.context.userId, ...b }, update: {} }); }
