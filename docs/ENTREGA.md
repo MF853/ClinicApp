@@ -1,3 +1,9 @@
+## Correções de dependências — 2026-09-20
+
+- Nest platform-express atualizado para 12.0.3, incluindo multer 2.4.0. Overrides limitados às dependências do Prisma: deepmerge-ts 8.0.0 e mysql2 3.24.4; Prisma permanece 7.10.0. Removido override antigo de multer, que não correspondia à árvore instalada.
+- CLI do Capacitor fixado em 8.4.3, versão estável sem a cadeia xcode/uuid vulnerável; core/android/ios permanecem 8.5.1. `cap --version` executado; não equivale a build nativo.
+- Instalação sem hooks (`--ignore-scripts`). Auditoria atual: zero vulnerabilidades reportadas pelo npm; não substitui revisão de segurança. Prisma generate, migrations no banco de teste, build e lint passaram; lifecycle e 30 testes backend passaram com PostgreSQL real. Revisão de complexidade: nenhuma biblioteca adicional de aplicação; revisão de compatibilidade com APIs existentes e suíte real de banco.
+
 ## Inicialização separada da seed — 2026-09-20
 
 - Validação: build/lint passaram; lifecycle e 30 testes backend passaram em PostgreSQL real. Reset exercitado somente em `clinicapp_test`, duas populações consecutivas, falha forçada para rollback e conexão extra para verificar recusa. Primeira rodada interrompida ao detectar uso de conexão fora da transação; corrigido e suíte repetida com sucesso. Banco de desenvolvimento não foi resetado; comando completo com bucket e aplicação não iniciado nesta rodada. PostgreSQL temporário encerrado ao final.

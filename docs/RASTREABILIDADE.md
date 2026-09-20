@@ -1,5 +1,9 @@
 # Rastreabilidade
 
+## Dependências — 2026-09-20
+
+RNF-40: dependências reportadas corrigidas; `npm-audit-current.json` sem alertas. Prisma/migrations/build/lint validados. CI e segurança integral continuam pendentes; ver ENTREGA.md.
+
 ## Execução e seed — 2026-09-20
 
 | Item | Implementação | Verificação |

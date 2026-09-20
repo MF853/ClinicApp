@@ -35,6 +35,11 @@
     "typescript-eslint": "8.48.0"
   },
   "overrides": {
-    "multer": "2.3.0"
+    "@prisma/config": {
+      "deepmerge-ts": "8.0.0"
+    },
+    "prisma": {
+      "mysql2": "3.24.4"
+    }
   }
 }
