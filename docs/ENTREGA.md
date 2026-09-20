@@ -1,3 +1,11 @@
+## Inicialização separada da seed — 2026-09-20
+
+- Validação: build/lint passaram; lifecycle e 30 testes backend passaram em PostgreSQL real. Reset exercitado somente em `clinicapp_test`, duas populações consecutivas, falha forçada para rollback e conexão extra para verificar recusa. Primeira rodada interrompida ao detectar uso de conexão fora da transação; corrigido e suíte repetida com sucesso. Banco de desenvolvimento não foi resetado; comando completo com bucket e aplicação não iniciado nesta rodada. PostgreSQL temporário encerrado ao final.
+- `npm run dev` prepara infraestrutura/Prisma/migrations e inicia API, worker e frontend sem popular ou limpar dados. `npm run db:seed` limpa tabelas da aplicação e filas pg-boss antes de recriar a demonstração; migrations preservadas. README atualizado com comandos de instalação e uso diário.
+- Reset e população na mesma transação PostgreSQL; falhas restauram os dados anteriores. Seed restrita aos bancos locais `clinicapp`/`clinicapp_test` em development/test, com recusa de outra seed concorrente e de conexões existentes. Parar API/worker antes da execução; não iniciar a aplicação durante o reset. Não altera privilégios nem proteções de auditoria das operações normais.
+- Ocorrências materializadas a partir de uma referência de tempo da execução; falta demonstrativa vinculada ao slot de ontem às 09h e prazo calculado pelo helper de dias úteis. Bucket e Mailpit não são limpos. Verificação do bucket precede o reset no comando completo.
+- Revisão de complexidade: reaproveitados Prisma, SQL transacional, materialização e helper de prazo, sem novas dependências. Revisão de correção/autorização/integridade: limpeza explicitamente solicitada, limitada ao destino local, rollback e proteção contra banco em uso cobertos pelos novos testes. Sem mudança de interface, documento de requisitos preservado.
+
 ## Validação do planejamento — 2026-09-20
 
 - Base `9afa254`; relatório completo em [VALIDACAO-2026-09-20.md](VALIDACAO-2026-09-20.md). Planejamento atualizado para refletir entregas de 17/09 e distinguir reativação de vínculo de reativação terapêutica. Documento de requisitos preservado; nenhuma lógica alterada.

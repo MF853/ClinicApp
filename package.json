@@ -10,7 +10,7 @@
     "node": ">=24.0.0 <25"
   },
   "scripts": {
-    "predev": "npm run infra:up && npm run db:generate && npm run db:migrate && npm run db:seed",
+    "predev": "npm run infra:up && npm run db:generate && npm run db:migrate",
     "dev": "node scripts/dev.mjs",
     "build": "npm run build -w @clinic/backend && npm run build -w @clinic/web",
     "lint": "npm run lint --workspaces",

@@ -9,10 +9,20 @@ Requisitos: Node 24 LTS, npm 11, Docker/Compose com o daemon iniciado. Não use 
 ```sh
 npm ci --ignore-scripts
 cp -n .env.example .env
+npm run infra:up
+npm run db:generate
+npm run db:migrate
+npm run db:seed
 npm run dev
 ```
 
-`npm run dev` inicia a infraestrutura com `docker compose up -d --wait`, gera o cliente Prisma, aplica migrations e executa o seed fictício antes de iniciar API, worker e frontend. Uma falha na preparação interrompe a inicialização. O seed preserva usuários existentes e suas senhas.
+`npm run dev` inicia a infraestrutura, gera o cliente Prisma e aplica migrations antes de iniciar API, worker e frontend. **Não executa seed nem limpa dados.** Uma falha na preparação interrompe a inicialização.
+
+`npm run db:seed` é separado e **apaga todos os dados do banco local configurado**, inclusive usuários, senhas alteradas, sessões, auditoria e jobs, antes de recriar os cenários fictícios com datas relativas à execução. Encerre a aplicação com Ctrl+C e desconecte outros clientes do banco antes de rodá-lo. Não é necessário apagar volumes Docker.
+
+A limpeza e a população são uma única transação: falha reverte a operação. Migrations são preservadas; a estrutura de filas pg-boss é recriada pelo worker no próximo início. Permitido somente com `NODE_ENV=development` ou `test`, host local e banco `clinicapp` ou `clinicapp_test`. Objetos já armazenados no bucket e mensagens capturadas no Mailpit não são apagados por esse comando; a limpeza é do banco PostgreSQL.
+
+Para reiniciar a aplicação mantendo seus dados, use apenas `npm run dev`. Para renovar a demonstração, pare a aplicação e execute `npm run db:seed` seguido de `npm run dev`.
 
 Frontend: http://localhost:5173 · API: http://127.0.0.1:3000/api/v1 · OpenAPI: /api/v1/docs · readiness: /api/v1/health/ready.
 

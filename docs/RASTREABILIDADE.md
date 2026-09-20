@@ -1,5 +1,14 @@
 # Rastreabilidade
 
+## Execução e seed — 2026-09-20
+
+| Item | Implementação | Verificação |
+|---|---|---|
+| Inicializar sem popular | `package.json`: predev sem db:seed | `scripts/dev.test.mjs`: lifecycle, ordem e ausência de seed |
+| Recriar demonstração limpa | `seed.ts`: limpeza de dados/jobs e população transacional | `seed.test.ts`: repetição sem acumular, rollback e bloqueio de destino/banco em uso |
+| Datas coerentes, RN-26 | Materialização relativa à execução, falta no slot correto, prazo útil | Helper de prazo existente; cenários demonstrativos recriados |
+
+
 ## Revisão consolidada — 2026-09-20
 
 Situação atual por incremento e requisitos: [VALIDACAO-2026-09-20.md](VALIDACAO-2026-09-20.md). Registros abaixo são históricos; a tabela inicial ao final não representa o estado completo atual.

@@ -8,7 +8,7 @@ import { test } from 'node:test';
 test('dev prepara os serviços em ordem e não inicia a aplicação se uma etapa falhar', () => {
   const directory = mkdtempSync(join(tmpdir(), 'clinicapp-dev-'));
   const { scripts } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-  const steps = ['infra:up', 'db:generate', 'db:migrate', 'db:seed'];
+  const steps = ['infra:up', 'db:generate', 'db:migrate'];
   try {
     // Exercita o lifecycle real do npm; os comandos substitutos não iniciam serviços.
     writeFileSync(join(directory, 'step.cjs'), `
@@ -19,6 +19,7 @@ test('dev prepara os serviços em ordem e não inicia a aplicação se uma etapa
       private: true,
       scripts: {
         predev: scripts.predev,
+        'db:seed': 'node step.cjs UNEXPECTED_SEED',
         ...Object.fromEntries([...steps, 'dev'].map(step => [step, `node step.cjs ${step}`])),
       },
     }));
