@@ -1,3 +1,11 @@
+## Validação do planejamento — 2026-09-20
+
+- Base `9afa254`; relatório completo em [VALIDACAO-2026-09-20.md](VALIDACAO-2026-09-20.md). Planejamento atualizado para refletir entregas de 17/09 e distinguir reativação de vínculo de reativação terapêutica. Documento de requisitos preservado; nenhuma lógica alterada.
+- Build/lint passaram; migration do banco de teste atual; lifecycle e 26 testes backend passaram em PostgreSQL real. Cobertura executada: 79,21% linhas no recorte; pasta de faltas 67,54%, `certificates.ts` 22,03% linhas/0% funções. RNF-49 não aceito para o módulo completo. Resumo atualizado em `coverage-summary.json`.
+- `npm audit`: 9 pacotes reportados, 6 altos/3 moderados; detalhes atualizados em `npm-audit-current.json`. Sem atualização de dependências nesta validação. Não há prova de exploração nem garantia de segurança decorrente desses números.
+- Lacunas prioritárias: ciclo de sessão bloqueada/reativação, liberação pontual de pendência, destinatários/gatilhos de notificações, auditoria de status/origem, testes do pipeline de anexos/worker, configuração e privacidade. Incrementos 2–6 permanecem parciais.
+- Navegador, worker, scanner e armazenamento não reexecutados; evidências visuais anteriores são históricas. Revisão de complexidade sem novas abstrações; revisão separada de correção/autorização/integridade registrada no relatório. Somente PostgreSQL iniciado para validação, encerrado ao final, sem remoção de volumes.
+
 ## Avisos da clínica — 2026-09-17
 
 - Playwright: publicação, segmentação e desaparecimento ao vencer passaram em Chromium e Firefox; superfícies compartilhadas também passaram nos dois navegadores. Axe sem violações nos cenários cobertos e capturas 390/1440 inspecionadas. Corrigida sincronização de logout no teste; repetição usou contas demonstrativas distintas após atingir o limite de login da conta compartilhada, sem desativar a proteção.

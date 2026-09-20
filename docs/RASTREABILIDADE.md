@@ -1,5 +1,19 @@
 # Rastreabilidade
 
+## Revisão consolidada — 2026-09-20
+
+Situação atual por incremento e requisitos: [VALIDACAO-2026-09-20.md](VALIDACAO-2026-09-20.md). Registros abaixo são históricos; a tabela inicial ao final não representa o estado completo atual.
+
+| Grupo | Situação verificada |
+|---|---|
+| Cadastros, grade, parâmetros individuais, avisos | Entregas de 17/09 confirmadas no código; suíte atual com 26 testes backend aprovada |
+| RF-CLI-10, RN-15/19/22/25 | Liberação fixa existe; faltam ciclo de bloqueio terapêutico, liberação pontual, reset na UI e reativação completa |
+| RF-FAL-08/09, RF-NOT-01/02/03 | Pré-validação inconclusiva, canais externos e parte dos destinatários/gatilhos pendentes |
+| RF-ADM-08/09/12, RNF-38/44 | Registro inicial de aceites/solicitações; jornadas de direitos e detalhamento da auditoria incompletos |
+| RNF-49 | Recorte 79,21% linhas; pasta de faltas 67,54%; upload/processamento/contestação sem cobertura funcional; não aceito integralmente |
+| RNF-34/40/51/52/53 | Gestão de chaves, CI/segurança, observabilidade, operação e mobile ainda parciais ou pendentes |
+
+
 ## Avisos — 2026-09-17
 
 | Requisitos | Implementação | Evidência / limite |
