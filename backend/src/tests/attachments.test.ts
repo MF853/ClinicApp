@@ -52,6 +52,7 @@ test('HTTP: upload, quarentena, arquivo cifrado, download autorizado, decisão e
   assert.equal((await fetch(base + '/certificates', { method: 'POST', headers: { ...patient, 'x-csrf-token': '' }, body: form() })).status, 403);
   const response = await fetch(base + '/certificates', { method: 'POST', headers: patient, body: form() }); assert.equal(response.status, 201);
   const c = await response.json(), attachment = await db.attachment.findFirstOrThrow({ where: { certificateId: c.id } });
+  assert.deepEqual((await db.notification.findMany({ where: { entityId: c.id, event: 'certificate-submitted' }, select: { userId: true } })).map(n => n.userId).sort(), [f.admin.userId, f.therapist.userId].sort());
   for (const files of [[Buffer.alloc(10 * 1024 * 1024 + 1)], [pdf, pdf, pdf, pdf]]) {
     const body = form(); body.delete('files');
     for (const buffer of files) body.append('files', new Blob([new Uint8Array(buffer)]), 'documento.pdf');
@@ -72,6 +73,9 @@ test('HTTP: upload, quarentena, arquivo cifrado, download autorizado, decisão e
   const urlResponse = await post(`/attachments/${attachment.id}/url`); assert.equal(urlResponse.status, 201);
   const { url } = await urlResponse.json();
   assert.equal((await fetch(await app.getUrl() + url, { headers: patient })).status, 200);
+  const issued = await db.audit.findFirstOrThrow({ where: { entityId: attachment.id, action: 'download-url-issued' } });
+  const attempted = await db.audit.findFirstOrThrow({ where: { entityId: attachment.id, action: 'download-attempt' } });
+  for (const row of [issued, attempted]) assert.match((row.context as { origin: string }).origin, /127\.0\.0\.1/);
   assert.equal((await fetch(await app.getUrl() + url, { headers: admin })).status, 403);
   const expired = Date.now() - 1;
   assert.equal((await fetch(`${base}/attachments/${attachment.id}/download?expires=${expired}&signature=${signDownload(attachment.id, f.patient.userId, expired)}`, { headers: patient })).status, 403);
@@ -82,6 +86,7 @@ test('HTTP: upload, quarentena, arquivo cifrado, download autorizado, decisão e
   assert.equal((await post(`/certificates/${c.id}/appeal`, { reason: 'Solicito reanálise do documento' })).status, 201);
   assert.equal((await post(`/certificates/${c.id}/decision`, { decision: 'reject', reason: 'Reanálise concluída com motivo' }, admin)).status, 201);
   assert.equal((await post(`/certificates/${c.id}/appeal`, { reason: 'Nova contestação não permitida' })).status, 409);
+  assert.deepEqual((await db.notification.findMany({ where: { entityId: c.id, event: 'certificate-appealed' }, select: { userId: true } })).map(n => n.userId).sort(), [f.admin.userId, f.therapist.userId].sort());
   await db.membership.update({ where: { id: f.patient.id }, data: { active: false } });
   assert.equal((await fetch(await app.getUrl() + url, { headers: patient })).status, 401);
 });

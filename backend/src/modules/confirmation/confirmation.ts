@@ -26,12 +26,13 @@ export async function advanceConfirmation(tx: Tx, ctx: Context, at = now()) {
     if (o.blocked) continue;
     if (at > a.closesAt) {
       await tx.appointment.update({ where: { id: a.id }, data: { status: 'EXPIRED' } });
-      await audit(tx, { ...ctx, id: 'SYSTEM' }, 'confirmation-expired', a.id);
+      await audit(tx, { ...ctx, id: 'SYSTEM' }, 'confirmation-expired', a.id, { before: a.status, after: 'EXPIRED' });
       const slot = await tx.slot.findUniqueOrThrow({ where: { id: o.slotId } });
       const therapist = await tx.membership.findUniqueOrThrow({ where: { id: slot.therapistId } });
       await notify(tx, ctx, therapist.userId, 'confirmation-expired', a.id);
     } else if (a.status === 'SCHEDULED' && at >= a.opensAt) {
       await tx.appointment.update({ where: { id: a.id }, data: { status: 'PENDING' } });
+      await audit(tx, { ...ctx, id: 'SYSTEM' }, 'confirmation-open', a.id, { before: a.status, after: 'PENDING' });
       const p = await tx.membership.findUniqueOrThrow({ where: { id: a.patientId } });
       await notify(tx, ctx, p.userId, 'confirmation-open', a.id);
     }

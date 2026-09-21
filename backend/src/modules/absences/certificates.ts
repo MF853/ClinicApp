@@ -3,7 +3,7 @@ import { fileTypeFromBuffer } from 'file-type';
 import { randomUUID, createHash } from 'node:crypto';
 import { DateTime } from 'luxon';
 import sharp from 'sharp';
-import { db, transaction, audit, notify, now, type Context } from '../../infrastructure/db.js';
+import { db, transaction, audit, notify, now, type Context, type Tx } from '../../infrastructure/db.js';
 import { certificate, roles } from '../../infrastructure/access.js';
 import { storeObject, readObject, deleteObject, scan } from '../../infrastructure/storage.js';
 export const categories = ['SAUDE_PACIENTE', 'SAUDE_DEPENDENTE', 'EMERGENCIA_FAMILIAR', 'COMPROMISSO_PROFISSIONAL', 'DESLOCAMENTO', 'FORCA_MAIOR', 'OUTRO'];
@@ -32,8 +32,7 @@ export async function submitCertificate(ctx: Context, body: Submission, files: E
       const c = await tx.certificate.create({ data: { clinicId: ctx.clinicId, absenceId: a.id, patientId: ctx.id, category: body.category, description: body.description, declaredDate: body.declaredDate, submittedAt: at, reviewAt: DateTime.fromJSDate(at, { zone: ctx.clinic.timezone }).plus({ days: ctx.clinic.reviewDays }).toJSDate() } });
       for (const { buffer: _buffer, ...file } of prepared) { await tx.attachment.create({ data: { ...file, clinicId: ctx.clinicId, certificateId: c.id } }); await tx.outbox.create({ data: { kind: 'attachment', clinicId: ctx.clinicId, payload: { id: file.id } } }); }
       await audit(tx, ctx, 'certificate-submitted', c.id, { prevalidation: 'Data declarada; não extraída do arquivo. Verificação inconclusiva.' });
-      const reviewers = await tx.membership.findMany({ where: { clinicId: ctx.clinicId, active: true, role: 'ADMIN', canReview: true } });
-      for (const reviewer of reviewers) await notify(tx, ctx, reviewer.userId, 'certificate-submitted', c.id);
+      await notifyReviewers(tx, ctx, a.appointmentId, c.id, 'certificate-submitted');
       return c;
     }); return result;
   } catch (error) { await Promise.allSettled(prepared.map(f => deleteObject(f.objectKey))); throw error; }
@@ -45,7 +44,10 @@ export async function appeal(ctx: Context, id: string, reason: string, at = now(
     if (c.status !== 'REJECTED' || c.appealAt || !c.decidedAt || at > DateTime.fromJSDate(c.decidedAt, { zone: ctx.clinic.timezone }).plus({ days: 7 }).toJSDate()) throw new ConflictException('A contestação única está indisponível ou fora do prazo.');
     await tx.absence.update({ where: { id: c.absenceId }, data: { state: 'PROVISIONAL' } });
     const updated = await tx.certificate.update({ where: { id }, data: { status: 'PENDING', appealAt: at, reason, reviewAt: DateTime.fromJSDate(at, { zone: ctx.clinic.timezone }).plus({ days: ctx.clinic.reviewDays }).toJSDate() } });
-    await audit(tx, ctx, 'certificate-appealed', id); return updated;
+    await audit(tx, ctx, 'certificate-appealed', id);
+    const absence = await tx.absence.findUniqueOrThrow({ where: { id: c.absenceId } });
+    await notifyReviewers(tx, ctx, absence.appointmentId, id, 'certificate-appealed');
+    return updated;
   });
 }
 export async function processAttachment(id: string) {
@@ -92,4 +94,12 @@ export async function purgeAttachment(id: string, at = now()) {
     await tx.attachment.update({ where: { id }, data: { purgedAt: at, status: 'PURGED' } });
     await audit(tx, { clinicId: a.clinicId, id: 'SYSTEM' }, 'attachment-purged', id);
   }, { timeout: 60000 });
+}
+
+async function notifyReviewers(tx: Tx, ctx: Context, appointmentId: string, certificateId: string, event: string) {
+  const a = await tx.appointment.findUniqueOrThrow({ where: { id: appointmentId } });
+  const o = await tx.occurrence.findUniqueOrThrow({ where: { id: a.occurrenceId } });
+  const slot = await tx.slot.findUniqueOrThrow({ where: { id: o.slotId } });
+  const recipients = await tx.membership.findMany({ where: { clinicId: ctx.clinicId, active: true, OR: [{ role: 'ADMIN', canReview: true }, { id: slot.therapistId, role: 'THERAPIST' }] } });
+  for (const p of recipients) await notify(tx, ctx, p.userId, event, certificateId);
 }

@@ -54,8 +54,13 @@ export async function decideCertificate(tx: Tx, ctx: Context, id: string, decisi
   if (decision === 'reject' && reason.trim().length < 5) throw new BadRequestException('Informe o motivo da rejeição para orientar o paciente.');
   const status = decision === 'approve' ? 'APPROVED' : 'REJECTED';
   const result = await tx.certificate.update({ where: { id }, data: { status, decidedAt: at, decidedBy: automatic ? 'SYSTEM' : ctx.id, reason } });
+  const beforeCount = decision === 'reject' ? (await countAbsences(tx, ctx, c.patientId, at)).count : 0;
   const absence = await tx.absence.update({ where: { id: c.absenceId }, data: { state: decision === 'approve' ? 'EXCUSED' : 'CONSOLIDATED' } });
-  await tx.appointment.update({ where: { id: absence.appointmentId }, data: { status: decision === 'approve' ? 'EXCUSED' : 'ABSENT' } });
+  const a = await tx.appointment.findUniqueOrThrow({ where: { id: absence.appointmentId } });
+  const appointmentStatus = decision === 'approve' ? 'EXCUSED' : 'ABSENT';
+  await tx.appointment.update({ where: { id: a.id }, data: { status: appointmentStatus } });
+  if (a.status !== appointmentStatus) await audit(tx, { ...ctx, id: automatic ? 'SYSTEM' : ctx.id }, 'certificate-appointment-status', a.id, { before: a.status, after: appointmentStatus, certificateId: id });
+  if (decision === 'reject') await notifyAbsenceCount(tx, ctx, absence, beforeCount, `${absence.id}:${c.appealAt?.toISOString() ?? 'initial'}`, at);
   await audit(tx, { ...ctx, id: automatic ? 'SYSTEM' : ctx.id }, `certificate-${status}`, id, { reason: automatic ? reason : 'Decisão registrada no atestado', reviewAt: c.reviewAt.toISOString() });
   const p = await tx.membership.findUniqueOrThrow({ where: { id: c.patientId } }); await notify(tx, ctx, p.userId, 'certificate-decided', `${id}:${at.toISOString()}`); return result;
 }
@@ -64,11 +69,26 @@ export async function consolidate(tx: Tx, ctx: Context, at = now()) {
   for (const absence of due) {
     const c = await tx.certificate.findUnique({ where: { absenceId: absence.id } });
     if (c?.status === 'PENDING' || c?.status === 'APPROVED') continue;
+    const beforeCount = (await countAbsences(tx, ctx, absence.patientId, at)).count;
     await tx.absence.update({ where: { id: absence.id }, data: { state: 'CONSOLIDATED' } }); await audit(tx, { ...ctx, id: 'SYSTEM' }, 'absence-consolidated', absence.id);
-    const p = await tx.membership.findUniqueOrThrow({ where: { id: absence.patientId } });
-    const count = await countAbsences(tx, ctx, absence.patientId, at);
-    await notify(tx, ctx, p.userId, count.count >= count.limit ? 'absence-limit' : count.count === count.limit - 1 ? 'absence-warning' : 'absence-consolidated', absence.id);
+    await notifyAbsenceCount(tx, ctx, absence, beforeCount, absence.id, at);
   }
   const certificates = await tx.certificate.findMany({ where: { clinicId: ctx.clinicId, status: 'PENDING', reviewAt: { lte: at } } });
   for (const c of certificates) await decideCertificate(tx, ctx, c.id, 'approve', `Aprovação por decurso de ${ctx.clinic.reviewDays} dias corridos desde o envio válido; sem avaliação humana de mérito.`, true, at);
+}
+
+async function notifyAbsenceCount(tx: Tx, ctx: Context, absence: { patientId: string; appointmentId: string }, before: number, eventId: string, at: Date) {
+  const current = await countAbsences(tx, ctx, absence.patientId, at);
+  const event = before < current.limit && current.count >= current.limit ? 'absence-limit'
+    : before < current.limit - 1 && current.count === current.limit - 1 ? 'absence-warning' : 'absence-consolidated';
+  const recipientIds = [absence.patientId];
+  if (event !== 'absence-consolidated') {
+    const a = await tx.appointment.findUniqueOrThrow({ where: { id: absence.appointmentId } });
+    const o = await tx.occurrence.findUniqueOrThrow({ where: { id: a.occurrenceId } });
+    const fixed = await tx.fixedAssignment.findMany({ where: { clinicId: ctx.clinicId, patientId: absence.patientId, OR: [{ active: true }, { blockedAt: { not: null } }] } });
+    const slots = await tx.slot.findMany({ where: { clinicId: ctx.clinicId, id: { in: [o.slotId, ...fixed.map(f => f.slotId)] } } });
+    recipientIds.push(...slots.map(s => s.therapistId));
+  }
+  const recipients = await tx.membership.findMany({ where: { clinicId: ctx.clinicId, active: true, id: { in: recipientIds } } });
+  for (const p of recipients) await notify(tx, ctx, p.userId, event, eventId);
 }

@@ -1,5 +1,17 @@
 ## Pipeline de anexos e worker — 2026-09-21
 
+## Notificações e auditoria — 2026-09-21
+
+- Item 3: limiares de faltas compartilham o mesmo fluxo na consolidação e na rejeição de atestado. Paciente e terapeutas vinculados recebem os avisos de aproximação/atingimento; reprocessamento não duplica notificações. Envio e contestação de atestado avisam também o terapeuta responsável, além dos administradores avaliadores.
+- Consultas criadas pendentes (fixas ou reposições) e reativadas em janela aberta geram aviso imediato na outbox. A reativação tem identidade de envio própria e mantém o UUID da consulta para a revalidação do worker. Criação com prazo já encerrado avisa o terapeuta, sem convidar o paciente a confirmar fora da janela.
+- Auditoria: abertura/expiração da janela e alteração de consulta por decisão de atestado registram antes/depois e ator; complementam criação, cancelamento, comparecimento e reativação do marco anterior. Downloads registram endereço de origem observado pelo servidor, sem URL assinada ou token.
+- Verificação final: `npm run build` e `npm run lint` passaram; `npm run test:coverage` passou com 46/46 testes em PostgreSQL real, S3 local, ClamAV e worker separado. Recorte configurado: 99,44% linhas / 88% branches; faltas 99,09% / 88,03%, confirmação 100% / 93,18%, encaixes 100% / 84,72%. Não representa cobertura de todo o produto; agenda não faz parte desse recorte.
+- Testes novos: destinatários vinculados, transições de limiar, repetição idempotente, outbox sem conteúdo clínico, auditoria SYSTEM e criação/reativação de consultas. Integração HTTP existente ampliada para avisos de atestado/contestação e origem do download.
+- A primeira tentativa da retomada falhou por serviços Docker desligados; após `infra:up` e preparação do banco de testes, a execução completa acima passou. Nenhuma seed foi executada no banco de desenvolvimento.
+- Revisões separadas concluídas: simplicidade (helpers compartilhados somente onde há dois chamadores, sem dependências novas); correção/autorização/integridade (destinatários ativos da clínica, lock comum, idempotência e vínculo do aviso à consulta conferidos). Interfaces do item 2 mantêm as evidências Chromium/Firefox já registradas; este incremento não altera UI.
+- Limites mantidos: envio real para provedores externos/push/SMS, janela de silêncio e histórico visual de entregas ainda pendentes. O SMTP local envia aviso genérico com acesso ao aplicativo; motivos clínicos ficam no ambiente autenticado. RN-22 continua parcial para pedido avulso sem consulta de origem, conforme marco anterior.
+
+
 ## Continuidade do atendimento — 2026-09-21
 
 - Item 2: bloqueio persistido na alocação fixa (`blockedAt`), reset justificado sem apagar histórico, reativação administrativa sob lock com validação de capacidade/idade/conflitos e restauração das consultas futuras canceladas pelo bloqueio que ainda tenham janela de confirmação. Confirmadas e reposições são preservadas. Cada sessão pode ser reativada separadamente.

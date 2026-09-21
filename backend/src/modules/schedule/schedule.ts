@@ -73,8 +73,16 @@ export async function materialize(tx: Tx, ctx: Context, at = now()) {
         if (await tx.appointment.findUnique({ where: { occurrenceId_patientId: { occurrenceId: o.id, patientId: a.patientId } } })) continue;
         if (await occupancy(tx, o.id) >= slot.capacity) continue;
         const window = confirmationWindow(o.startsAt, at, ctx.clinic);
-        const created = await tx.appointment.create({ data: { clinicId: ctx.clinicId, occurrenceId: o.id, patientId: a.patientId, ...window } });
+        const created = await tx.appointment.create({ data: { clinicId: ctx.clinicId, occurrenceId: o.id, patientId: a.patientId, status: window.closesAt < at ? 'EXPIRED' : window.opensAt <= at ? 'PENDING' : 'SCHEDULED', ...window } });
         await audit(tx, ctx, 'appointment-created', created.id, { before: null, after: created.status });
+        if (created.status === 'PENDING') {
+          const p = await tx.membership.findUniqueOrThrow({ where: { id: a.patientId } });
+          await notify(tx, ctx, p.userId, 'confirmation-open', created.id);
+        }
+        if (created.status === 'EXPIRED') {
+          const member = await tx.membership.findUniqueOrThrow({ where: { id: slot.therapistId } });
+          await notify(tx, ctx, member.userId, 'confirmation-expired', created.id);
+        }
         await settleReleased(tx, ctx, o.id, at);
       }
     }
@@ -136,6 +144,10 @@ export async function reactivateAssignment(tx: Tx, ctx: Context, slotId: string,
     if (window.closesAt <= at) continue;
     const status = window.opensAt <= at ? 'PENDING' : 'SCHEDULED';
     await tx.appointment.update({ where: { id: a.id }, data: { status, cancelledAt: null, ...window } });
+    if (status === 'PENDING') {
+      const p = await tx.membership.findUniqueOrThrow({ where: { id: patientId } });
+      await notify(tx, ctx, p.userId, 'confirmation-open', a.id, `${a.id}:${fixed.blockedAt.toISOString()}`);
+    }
     await settleReleased(tx, ctx, o.id, at);
     await audit(tx, ctx, 'appointment-reactivated', a.id, { before: a.status, after: status, assignmentId: fixed.id });
   }

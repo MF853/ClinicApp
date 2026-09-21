@@ -19,8 +19,8 @@ export async function transaction<T>(ctx: Context, fn: (tx: Tx) => Promise<T>): 
 export async function audit(tx: Tx, ctx: Pick<Context, 'clinicId' | 'id'>, action: string, entityId: string, context: Prisma.InputJsonObject = {}) {
   await tx.audit.create({ data: { clinicId: ctx.clinicId, actor: ctx.id, action, entityId, context } });
 }
-export async function notify(tx: Tx, ctx: Pick<Context, 'clinicId'>, userId: string, event: string, entityId: string) {
-  const id = `${event}:${entityId}:${userId}`;
+export async function notify(tx: Tx, ctx: Pick<Context, 'clinicId'>, userId: string, event: string, entityId: string, instanceId = entityId) {
+  const id = `${event}:${instanceId}:${userId}`;
   await tx.notification.upsert({ where: { id }, create: { id, clinicId: ctx.clinicId, userId, event, entityId }, update: {} });
   await tx.outbox.upsert({ where: { id }, create: { id, clinicId: ctx.clinicId, kind: 'notification', payload: { id } }, update: {} });
 }

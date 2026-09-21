@@ -65,6 +65,7 @@ export async function decideFitting(tx: Tx, ctx: Context, id: string, decision: 
     if (window.closesAt <= at) throw new ConflictException('Não há tempo hábil de confirmação para este encaixe. Fale com o terapeuta.');
     const created = await tx.appointment.create({ data: { clinicId: ctx.clinicId, patientId: request.patientId, occurrenceId: request.occurrenceId, originalId: request.originalId, origin: 'REPLACEMENT', status: window.opensAt <= at ? 'PENDING' : 'SCHEDULED', ...window } }); appointmentId = created.id;
     await audit(tx, ctx, 'appointment-created', created.id, { before: null, after: created.status, requestId: id });
+    if (created.status === 'PENDING') await notify(tx, ctx, valid.patient.userId, 'confirmation-open', created.id);
     await settleReleased(tx, ctx, request.occurrenceId, at);
   }
   await tx.reservation.update({ where: { requestId: id }, data: { active: false } });

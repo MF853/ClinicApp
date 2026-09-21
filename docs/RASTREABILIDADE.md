@@ -1,5 +1,15 @@
 # Rastreabilidade
 
+## Notificações e auditoria — 2026-09-21
+
+| Requisitos | Implementação / evidência | Limite |
+|---|---|---|
+| RN-23, RF-NOT-02/03/04 | Limiares em consolidação e rejeição avisam paciente/terapeutas; atestado e contestação avisam responsável; criação/reativação pendente abre aviso | SMTP local genérico; provedores externos e push pendentes |
+| RF-ADM-12 | Transições automáticas e decisão de atestado auditam antes/depois; testes verificam ator SYSTEM e idempotência | Seed demonstrativa não representa jornada clínica real |
+| RNF-38 | Emissão de URL, tentativa e conclusão de download registram origem observada pelo servidor | Endereço do proxy em instalações com proxy; não há política de proxies confiáveis inventada |
+| RNF-49 | 46 testes backend passam; recorte 99,44% linhas / 88% branches; confirmação/encaixe 100% linhas | Não equivale à cobertura integral; agenda fora do recorte |
+
+
 ## Continuidade — 2026-09-21
 
 | Requisitos | Implementação/evidência | Limite |
