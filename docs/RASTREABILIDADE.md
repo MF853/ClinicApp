@@ -1,5 +1,16 @@
 # Rastreabilidade
 
+## Anexos e worker — 2026-09-21
+
+| Requisitos | Evidência atual | Limite |
+|---|---|---|
+| RF-PAC-05/06/14, RN-29/35 | Integração HTTP de envio, limites, categorias, decisão e contestação única | HEIC real positivo não validado |
+| RNF-34/35/37/46/47 | Cifragem, URL curta vinculada ao usuário, ClamAV real, EXIF removido, sessão e isolamento verificados | KMS/rotação e segurança integral pendentes |
+| RNF-43 | Expurgo revalida retenção e decisão sob locks compartilhados; concorrência não recria objeto | Recuperação de falha conjunta S3/DB requer reconciliação adicional |
+| RNF-49 | 37 testes backend; linhas: faltas 98,39%, confirmação 89,74%, encaixe 100% | Recorte definido em scripts/test-backend.mjs; não é cobertura integral do produto |
+| Worker/outbox | Processo separado: job falha com scanner inacessível, repete e conclui após recuperação | Não comprova entrega externa exatamente uma vez |
+
+
 ## Dependências — 2026-09-20
 
 RNF-40: dependências reportadas corrigidas; `npm-audit-current.json` sem alertas. Prisma/migrations/build/lint validados. CI e segurança integral continuam pendentes; ver ENTREGA.md.

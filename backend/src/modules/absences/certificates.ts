@@ -49,11 +49,47 @@ export async function appeal(ctx: Context, id: string, reason: string, at = now(
   });
 }
 export async function processAttachment(id: string) {
-  const a = await db.attachment.findUnique({ where: { id } }); if (!a || a.status === 'CLEAN' || a.status === 'REJECTED' || a.purgedAt) return;
-  try {
-    let bytes = await readObject(a.objectKey); await scan(bytes);
-    if (a.mime.startsWith('image/')) bytes = await sharp(bytes, { limitInputPixels: 40000000 }).rotate().png().toBuffer();
-    await storeObject(a.objectKey, bytes);
-    await db.attachment.updateMany({ where: { id, purgedAt: null }, data: { status: 'CLEAN', mime: a.mime.startsWith('image/') ? 'image/png' : a.mime, failure: null } });
-  } catch (error) { const malware = error instanceof Error && error.message === 'MALWARE_FOUND'; await db.attachment.updateMany({ where: { id, purgedAt: null }, data: { status: malware ? 'REJECTED' : 'QUARANTINED', failure: malware ? 'Arquivo inseguro. Solicite orientação à clínica.' : 'Verificação pendente: scanner ou conversão indisponível.' } }); if (!malware) throw new Error('ATTACHMENT_PROCESSING_PENDING'); }
+  const retry = await db.$transaction(async tx => {
+    // ponytail: lock por anexo durante I/O; usar lease se o volume exigir transações menores.
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`attachment:${id}`}))`;
+    const a = await tx.attachment.findUnique({ where: { id } });
+    if (!a || a.status === 'CLEAN' || a.status === 'REJECTED' || a.purgedAt) return false;
+    const c = await tx.certificate.findFirstOrThrow({ where: { id: a.certificateId, clinicId: a.clinicId } });
+    const active = () => tx.membership.findFirst({ where: { id: c.patientId, clinicId: a.clinicId, active: true, role: 'PATIENT' } });
+    if (!await active()) return false;
+    try {
+      let bytes = await readObject(a.objectKey); await scan(bytes);
+      if (a.mime.startsWith('image/')) bytes = await sharp(bytes, { limitInputPixels: 40000000 }).rotate().png().toBuffer();
+      if (!await active()) return false;
+      if (bytes.length > 10 * 1024 * 1024) throw new Error('CONVERTED_FILE_TOO_LARGE');
+      await storeObject(a.objectKey, bytes);
+      await tx.attachment.update({ where: { id }, data: { status: 'CLEAN', mime: a.mime.startsWith('image/') ? 'image/png' : a.mime, size: bytes.length, hash: createHash('sha256').update(bytes).digest('hex'), failure: null } });
+      await audit(tx, { clinicId: a.clinicId, id: 'SYSTEM' }, 'attachment-clean', id);
+      return false;
+    } catch (error) {
+      const malware = error instanceof Error && error.message === 'MALWARE_FOUND';
+      await tx.attachment.update({ where: { id }, data: { status: malware ? 'REJECTED' : 'QUARANTINED', failure: malware ? 'Arquivo inseguro. Solicite orientação à clínica.' : 'Verificação pendente: scanner, armazenamento ou conversão indisponível.' } });
+      await audit(tx, { clinicId: a.clinicId, id: 'SYSTEM' }, malware ? 'attachment-rejected' : 'attachment-processing-pending', id);
+      return !malware;
+    }
+  }, { timeout: 60000 });
+  if (retry) throw new Error('ATTACHMENT_PROCESSING_PENDING');
+}
+
+export async function purgeAttachment(id: string, at = now()) {
+  const original = await db.attachment.findUnique({ where: { id } });
+  if (!original || original.purgedAt) return;
+  await db.$transaction(async tx => {
+    // Decisão/contestação e expurgo compartilham o lock da clínica; processamento usa o do anexo.
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${original.clinicId}))`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`attachment:${id}`}))`;
+    const a = await tx.attachment.findUniqueOrThrow({ where: { id } });
+    if (a.purgedAt) return;
+    const clinic = await tx.clinic.findUniqueOrThrow({ where: { id: a.clinicId } });
+    const c = await tx.certificate.findFirstOrThrow({ where: { id: a.certificateId, clinicId: a.clinicId } });
+    if (c.status === 'PENDING' || !c.decidedAt || c.decidedAt >= DateTime.fromJSDate(at).minus({ days: clinic.retentionDays }).toJSDate()) return;
+    await deleteObject(a.objectKey);
+    await tx.attachment.update({ where: { id }, data: { purgedAt: at, status: 'PURGED' } });
+    await audit(tx, { clinicId: a.clinicId, id: 'SYSTEM' }, 'attachment-purged', id);
+  }, { timeout: 60000 });
 }

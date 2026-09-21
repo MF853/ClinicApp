@@ -2,7 +2,7 @@ import {spawnSync} from 'node:child_process';
 import {readFileSync,readdirSync} from 'node:fs';
 import {parseEnv} from 'node:util';
 const env={...parseEnv(readFileSync('../.env','utf8')),...process.env};
-const url=new URL(env.TEST_DATABASE_URL??env.DATABASE_URL);url.pathname='/clinicapp_test';env.DATABASE_URL=url.toString();
+const url=new URL(env.TEST_DATABASE_URL??env.DATABASE_URL);url.pathname='/clinicapp_test';env.DATABASE_URL=url.toString();env.S3_BUCKET='clinicapp-test';
 const files=readdirSync('dist/tests').filter(f=>f.endsWith('.test.js')).map(f=>'dist/tests/'+f);
 if(!files.length)throw new Error('Nenhum teste encontrado');
 const args=['--test','--test-concurrency=1',...files];

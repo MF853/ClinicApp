@@ -1,10 +1,10 @@
 # Planejamento do ClinicApp
 
-Atualizado em 20/09/2026. Projeto pessoal, sem vínculo com outros projetos empresariais. Este arquivo registra o plano e a situação da entrega; não substitui nem altera o [documento de requisitos](Documento-de-Requisitos-ClinicApp-v2.md).
+Atualizado em 21/09/2026. Projeto pessoal, sem vínculo com outros projetos empresariais. Este arquivo registra o plano e a situação da entrega; não substitui nem altera o [documento de requisitos](Documento-de-Requisitos-ClinicApp-v2.md).
 
 ## Validação atual
 
-Comparação do código com requisitos e planejamento: [validação de 20/09/2026](VALIDACAO-2026-09-20.md). Build/lint, lifecycle e 26 testes backend passaram. Permanecem lacunas funcionais e operacionais; cobertura do módulo completo de faltas abaixo de 80% e 9 pacotes reportados pelo npm audit. Esta rodada não reexecutou navegador/worker/anexos.
+Comparação do código com requisitos e planejamento: [validação de 20/09/2026](VALIDACAO-2026-09-20.md). Na validação de 20/09 havia lacunas de cobertura e 9 pacotes com alertas. Atualização de 21/09: dependências corrigidas (auditoria sem alertas), build/lint aprovados e 37 testes backend, incluindo anexos e worker reais. Cobertura de faltas: 98,39% das linhas. Limites atuais em ENTREGA.md; não há aceite integral do produto.
 
 Entregues em 17/09: cadastros internos, desvinculação/reativação de vínculo, parâmetros individuais, edição básica da grade, alocação com exceção etária, liberação de horário fixo e avisos por público/prazo. Isso não conclui convites, sessão terapêutica bloqueada nem exceções recorrentes.
 
@@ -52,8 +52,8 @@ Esses pontos descrevem código conectado, não uma declaração de cobertura com
 - Pool de encaixe, prioridade de 15 dias, ofertas temporizadas e lista de espera conforme prioridade MoSCoW; indicadores agregados/exportação de relatórios.
 
 ### Integrações e segurança
-- Testar integralmente entrega e repetição dos jobs, revalidação de notificações, falhas do scanner/armazenamento, expurgo concorrente e reconciliação SSE. Definir monitoramento da fila e alertas.
-- Endurecer pipeline de anexos, corrigir restantes alertas de dependências, implementar gestão dedicada/rotação de chaves e tratamento de objetos órfãos. Chave em .env é somente para desenvolvimento.
+- Ampliar a validação de jobs para notificações, falhas conjuntas de armazenamento/banco e reconciliação SSE; reprocessamento de anexos após falha de scanner e expurgo concorrente já testados. Definir monitoramento da fila e alertas.
+- Completar robustez operacional de anexos, manter auditoria de dependências, implementar gestão dedicada/rotação de chaves e reconciliação de objetos órfãos; locks de processamento/expurgo e correções de dependências entregues. Chave em .env é somente para desenvolvimento.
 - Mensagens diretas, preferências/janela de silêncio, lembretes e provedores reais de push/SMS/e-mail. E-mail local capturado não comprova entrega externa.
 - Revisar autorização de todos os recursos, RLS como defesa adicional, privilégios mínimos de banco, limites de taxa por operação, cifragem de dados sensíveis além dos anexos e resposta a incidentes.
 - Capacitor: projetos Android/iOS, autenticação móvel testada, plugins, Android 10/iOS 15 e dispositivos reais. Não há build nativo validado.

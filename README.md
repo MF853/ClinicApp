@@ -31,13 +31,14 @@ Contas demonstrativas: `admin@example.test`, `terapeuta@example.test`, `recepcao
 Use Ctrl+C para encerrar a aplicação. A infraestrutura permanece disponível; para pará-la sem apagar dados, execute `docker compose stop`.
 
 ```sh
+npm run infra:up
 npm run db:test:prepare
 npm test
 npm run test:coverage
 npm run lint -w @clinic/backend
 ```
 
-Testes usam banco clinicapp_test separado. PostgreSQL 55432; MinIO 59000 (console 59001); Mailpit 58025 (SMTP 51025); ClamAV 53310. Consulte `docker compose ps` e `docker compose logs SERVICO`. Nenhum serviço externo foi contratado ou publicado.
+Testes usam banco `clinicapp_test` e bucket `clinicapp-test` separados. A suíte de anexos requer PostgreSQL, MinIO, ClamAV e Mailpit locais; inicia um worker temporário e verifica upload/download, rejeição de malware, falhas, reprocessamento e expurgo. Os objetos criados pelos cenários são removidos ao terminar. PostgreSQL 55432; MinIO 59000 (console 59001); Mailpit 58025 (SMTP 51025); ClamAV 53310. Consulte `docker compose ps` e `docker compose logs SERVICO`. Nenhum serviço externo foi contratado ou publicado.
 
 Para verificar a ordem da preparação e a interrupção em caso de falha sem iniciar serviços: `node --test scripts/dev.test.mjs`.
 

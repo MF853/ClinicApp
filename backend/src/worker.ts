@@ -3,11 +3,11 @@ import nodemailer from 'nodemailer';
 import { DateTime } from 'luxon';
 import { db, systemTransaction } from './infrastructure/db.js';
 import { decrypt } from './infrastructure/crypto.js';
-import { ensureBucket, deleteObject } from './infrastructure/storage.js';
+import { ensureBucket } from './infrastructure/storage.js';
 import { advanceConfirmation } from './modules/confirmation/confirmation.js';
 import { consolidate } from './modules/absences/absences.js';
 import { materialize } from './modules/schedule/schedule.js';
-import { processAttachment } from './modules/absences/certificates.js';
+import { processAttachment, purgeAttachment } from './modules/absences/certificates.js';
 const boss = new PgBoss(process.env.DATABASE_URL!);
 boss.on('error', () => console.error('{"event":"queue-error"}'));
 const mail = nodemailer.createTransport({ host: process.env.SMTP_HOST, port: Number(process.env.SMTP_PORT ?? 1025), secure: false, disableFileAccess: true, disableUrlAccess: true });
@@ -35,7 +35,7 @@ await boss.work('tick', async () => {
     await systemTransaction(clinic.id, async (tx, ctx) => { await materialize(tx, ctx); await advanceConfirmation(tx, ctx); await consolidate(tx, ctx); });
     const expired = await db.certificate.findMany({ where: { clinicId: clinic.id, decidedAt: { lt: DateTime.now().minus({ days: clinic.retentionDays }).toJSDate() }, status: { not: 'PENDING' } }, select: { id: true } });
     const attachments = await db.attachment.findMany({ where: { clinicId: clinic.id, certificateId: { in: expired.map(c => c.id) }, purgedAt: null } });
-    for (const a of attachments) { await deleteObject(a.objectKey); await db.attachment.update({ where: { id: a.id }, data: { purgedAt: new Date(), status: 'PURGED' } }); await db.audit.create({ data: { clinicId: clinic.id, actor: 'SYSTEM', action: 'attachment-purged', entityId: a.id } }); }
+    for (const a of attachments) await purgeAttachment(a.id);
   }
   await db.session.deleteMany({ where: { expiresAt: { lt: new Date() } } });
 });
