@@ -1,5 +1,15 @@
 # Rastreabilidade
 
+## Continuidade — 2026-09-21
+
+| Requisitos | Implementação/evidência | Limite |
+|---|---|---|
+| RF-CLI-10, RN-19/20/21/25 | Bloqueio por sessão, reset e reativação com justificativa; PostgreSQL real, rollback, concorrência; interface Chromium/Firefox | Contador por clínica permanece D03; confirmadas preservadas |
+| RN-11/15 | Liberação pontual, cancelamento apenas na ocupação efetiva, aviso sem falta; reserva recusada e corrida com confirmação testadas | Novos encaixes respeitam a janela mínima RN-09 |
+| RN-22 | Reposição de sessão bloqueada exige recepção no servidor; UI desabilita aprovação de outros perfis | Pedido de atendimento sem consulta de origem ainda pendente |
+| RF-ADM-12, RNF-46 | Auditoria por consulta nos novos fluxos; isolamento, roles e lock comum | Complementos de avisos/auditoria no próximo incremento |
+
+
 ## Anexos e worker — 2026-09-21
 
 | Requisitos | Evidência atual | Limite |

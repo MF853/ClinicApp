@@ -6,7 +6,9 @@ import { businessDeadline } from '../../infrastructure/time.js';
 export async function countAbsences(tx: Tx, ctx: Context, patientId: string, at = now()) {
   const p = await patient(tx, ctx, patientId);
   const from = DateTime.fromJSDate(at, { zone: ctx.clinic.timezone }).minus({ days: ctx.clinic.evaluationDays }).toJSDate();
-  return { count: await tx.absence.count({ where: { clinicId: ctx.clinicId, patientId, state: 'CONSOLIDATED', occurredAt: { gte: p.resetAt && p.resetAt > from ? p.resetAt : from } } }), limit: p.absenceLimit ?? ctx.clinic.absenceLimit, suspendedUntil: p.suspendedUntil };
+  const slots = await tx.slot.findMany({ where: { clinicId: ctx.clinicId, ...(ctx.role === 'THERAPIST' ? { therapistId: ctx.id } : {}) } });
+  const blocked = await tx.fixedAssignment.findMany({ where: { clinicId: ctx.clinicId, patientId, blockedAt: { not: null }, slotId: { in: slots.map(s => s.id) } } });
+  return { blockedSessions: blocked.map(a => ({ slotId: a.slotId, blockedAt: a.blockedAt, slot: slots.find(s => s.id === a.slotId)! })), count: await tx.absence.count({ where: { clinicId: ctx.clinicId, patientId, state: 'CONSOLIDATED', occurredAt: { gte: p.resetAt && p.resetAt > from ? p.resetAt : from } } }), limit: p.absenceLimit ?? ctx.clinic.absenceLimit, suspendedUntil: p.suspendedUntil };
 }
 export async function recordAbsence(tx: Tx, ctx: Context, a: Awaited<ReturnType<typeof appointment>>, reason: string, _at = now()) {
   const p = await tx.membership.findUniqueOrThrow({ where: { id: a.patientId } });
@@ -32,12 +34,15 @@ export async function consequence(tx: Tx, ctx: Context, patientId: string, actio
   } else if (action === 'reset') await tx.membership.update({ where: { id: patientId }, data: { resetAt: at } });
   else if (action === 'apply') {
     const slots = await tx.slot.findMany({ where: { clinicId: ctx.clinicId, ...(ctx.role === 'THERAPIST' ? { therapistId: ctx.id } : {}) }, select: { id: true } });
-    await tx.fixedAssignment.updateMany({ where: { clinicId: ctx.clinicId, patientId, slotId: { in: slots.map(s => s.id) } }, data: { active: false } });
+    await tx.fixedAssignment.updateMany({ where: { clinicId: ctx.clinicId, patientId, active: true, slotId: { in: slots.map(s => s.id) } }, data: { active: false, blockedAt: at } });
     const occurrences = await tx.occurrence.findMany({ where: { clinicId: ctx.clinicId, slotId: { in: slots.map(s => s.id) }, startsAt: { gt: at } }, select: { id: true } });
-    await tx.appointment.updateMany({ where: { clinicId: ctx.clinicId, patientId, occurrenceId: { in: occurrences.map(o => o.id) }, status: { in: ['SCHEDULED', 'PENDING', 'EXPIRED'] } }, data: { status: 'CANCELLED', cancelledAt: at } });
+    const pending = await tx.appointment.findMany({ where: { clinicId: ctx.clinicId, patientId, origin: 'FIXED', occurrenceId: { in: occurrences.map(o => o.id) }, status: { in: ['SCHEDULED', 'PENDING', 'EXPIRED', 'RELEASED'] } } });
+    for (const a of pending) {
+      await tx.appointment.update({ where: { id: a.id }, data: { status: 'CANCELLED', cancelledAt: at } });
+      await audit(tx, ctx, 'consequence-appointment-cancelled', a.id, { before: a.status, after: 'CANCELLED', reason });
+    }
   } else {
-    // Reativação exige alocação explícita com nova verificação de capacidade; nunca reocupar o slot às cegas.
-    await tx.membership.update({ where: { id: patientId }, data: { suspendedUntil: null } });
+    throw new BadRequestException('Escolha a sessão bloqueada para reativar com verificação de capacidade.');
   }
   await audit(tx, ctx, `consequence-${action}`, patientId, { reason, count: current.count, until: until ?? null });
   await notify(tx, ctx, p.userId, `consequence-${action}`, `${patientId}:${at.toISOString()}`); return { ok: true };

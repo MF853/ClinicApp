@@ -31,3 +31,8 @@ export async function certificate(tx: Tx, ctx: Context, id: string, decision = f
   if (decision && (ctx.role === 'PATIENT' || (ctx.role === 'THERAPIST' && !ctx.clinic.particular))) throw new ForbiddenException('A decisão cabe ao avaliador designado da clínica.');
   return { ...c, absence, appointment: a };
 }
+
+export async function blockedSession(tx: Tx, ctx: Context, patientId: string, therapistId: string) {
+  const slots = await tx.slot.findMany({ where: { clinicId: ctx.clinicId, therapistId }, select: { id: true } });
+  return tx.fixedAssignment.findFirst({ where: { clinicId: ctx.clinicId, patientId, slotId: { in: slots.map(s => s.id) }, blockedAt: { not: null } } });
+}

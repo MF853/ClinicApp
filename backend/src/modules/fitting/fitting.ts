@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { DateTime } from 'luxon';
 import { type Context, type Tx, now, audit, notify } from '../../infrastructure/db.js';
-import { appointment, roles } from '../../infrastructure/access.js';
+import { appointment, roles, blockedSession } from '../../infrastructure/access.js';
 import { ageAt, confirmationWindow } from '../../infrastructure/time.js';
 export const occupiedStates = ['SCHEDULED', 'PENDING', 'EXPIRED', 'CONFIRMED', 'ATTENDED'] as const;
 export async function occupancy(tx: Tx, id: string) {
@@ -44,11 +44,17 @@ export async function reserve(tx: Tx, ctx: Context, originalId: string, occurren
   const request = await tx.fittingRequest.create({ data: { clinicId: ctx.clinicId, patientId: ctx.id, originalId, occurrenceId } });
   await tx.reservation.create({ data: { requestId: request.id, clinicId: ctx.clinicId, patientId: ctx.id, occurrenceId } });
   await audit(tx, ctx, 'fitting-reserved', request.id);
+  if (await blockedSession(tx, ctx, ctx.id, valid.slot.therapistId)) {
+    const reception = await tx.membership.findMany({ where: { clinicId: ctx.clinicId, role: 'RECEPTION', active: true } });
+    for (const r of reception) await notify(tx, ctx, r.userId, 'fitting-reception-required', request.id);
+  }
   const t = await tx.membership.findUniqueOrThrow({ where: { id: valid.slot.therapistId } }); await notify(tx, ctx, t.userId, 'fitting-requested', request.id); return request;
 }
 export async function decideFitting(tx: Tx, ctx: Context, id: string, decision: 'approve' | 'reject', reason: string, at = now()) {
   roles(ctx, 'ADMIN', 'RECEPTION', 'THERAPIST'); const request = await tx.fittingRequest.findFirst({ where: { id, clinicId: ctx.clinicId } }); if (!request) throw new NotFoundException();
-  await appointment(tx, ctx, request.originalId);
+  const original = await appointment(tx, ctx, request.originalId);
+  const blocked = await blockedSession(tx, ctx, request.patientId, original.slot.therapistId);
+  if (decision === 'approve' && blocked) roles(ctx, 'RECEPTION');
   if (request.status !== 'PENDING') return request;
   if (decision === 'reject' && reason.trim().length < 5) throw new BadRequestException('Informe um motivo que oriente o paciente.');
   let appointmentId: string | undefined;
@@ -58,8 +64,24 @@ export async function decideFitting(tx: Tx, ctx: Context, id: string, decision: 
     const window = confirmationWindow(valid.occurrence.startsAt, at, ctx.clinic);
     if (window.closesAt <= at) throw new ConflictException('Não há tempo hábil de confirmação para este encaixe. Fale com o terapeuta.');
     const created = await tx.appointment.create({ data: { clinicId: ctx.clinicId, patientId: request.patientId, occurrenceId: request.occurrenceId, originalId: request.originalId, origin: 'REPLACEMENT', status: window.opensAt <= at ? 'PENDING' : 'SCHEDULED', ...window } }); appointmentId = created.id;
+    await audit(tx, ctx, 'appointment-created', created.id, { before: null, after: created.status, requestId: id });
+    await settleReleased(tx, ctx, request.occurrenceId, at);
   }
   await tx.reservation.update({ where: { requestId: id }, data: { active: false } });
   const result = await tx.fittingRequest.update({ where: { id }, data: { status: decision === 'approve' ? 'APPROVED' : 'REJECTED', reason, appointmentId, decidedAt: at } });
   await audit(tx, ctx, `fitting-${decision}`, id); const p = await tx.membership.findUniqueOrThrow({ where: { id: request.patientId } }); await notify(tx, ctx, p.userId, 'fitting-decided', id); return result;
+}
+
+// Só a ocupação efetiva cancela titulares liberados; reservas não são atendimentos.
+export async function settleReleased(tx: Tx, ctx: Context, occurrenceId: string, at = now()) {
+  const o = await tx.occurrence.findUniqueOrThrow({ where: { id: occurrenceId } });
+  const slot = await tx.slot.findUniqueOrThrow({ where: { id: o.slotId } });
+  const occupied = await tx.appointment.count({ where: { occurrenceId, status: { in: [...occupiedStates] } } });
+  const released = await tx.appointment.findMany({ where: { clinicId: ctx.clinicId, occurrenceId, status: 'RELEASED' }, orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] });
+  for (const a of released.slice(0, Math.max(0, released.length - Math.max(0, slot.capacity - occupied)))) {
+    await tx.appointment.update({ where: { id: a.id }, data: { status: 'CANCELLED', cancelledAt: at } });
+    await audit(tx, ctx, 'released-appointment-reassigned', a.id, { before: 'RELEASED', after: 'CANCELLED' });
+    const p = await tx.membership.findUniqueOrThrow({ where: { id: a.patientId } });
+    await notify(tx, ctx, p.userId, 'appointment-reassigned', a.id);
+  }
 }

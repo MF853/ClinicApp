@@ -36,13 +36,14 @@ function CreatePerson({ ctx, onClose }: { ctx: Member; onClose: () => void }) {
 function PersonDetails({ person, ctx, onClose }: { person: Person; ctx: Member; onClose: () => void }) {
   const action = useAction(), [reason, setReason] = useState(''), [until, setUntil] = useState(''), [confirmStatus, setConfirmStatus] = useState(false);
   const summary = useQuery({ queryKey: ['absence-summary', ctx.id, person.id], enabled: person.role === 'PATIENT' && person.active,
-    queryFn: () => api<{ summary: { count: number; limit: number }; items: Absence[] }>(`/patients/${person.id}/absences`) });
+    queryFn: () => api<{ summary: { count: number; limit: number; blockedSessions: { slotId: string; slot: { weekday: number; minute: number; room: string } }[] }; items: Absence[] }>(`/patients/${person.id}/absences`) });
   return <Modal title={person.user.name} onClose={onClose}>
     <p>{roleNames[person.role]} · {person.active ? 'Vínculo ativo' : 'Vínculo inativo'}</p><p>{person.user.email} · {person.user.phone}</p>
     {person.registration && <p>Registro profissional: {person.registration}</p>}
     {person.role === 'PATIENT' && person.active && <>
       {summary.isPending ? <Loading /> : summary.error ? <Message error>{summary.error.message}</Message> : <>
         <h3>{summary.data.summary.count} de {summary.data.summary.limit} faltas não justificadas</h3>
+        {summary.data.summary.blockedSessions.map(b => <div className={s.panel} key={b.slotId}><h3>Sessão bloqueada</h3><p>{weekdays[b.slot.weekday]} · {minuteTime(b.slot.minute)} · {b.slot.room}</p><p>Novos pedidos de atendimento exigem aprovação da recepção.</p>{ctx.role === 'ADMIN' && <><p>Preencha a justificativa da decisão abaixo. A reativação verifica capacidade, faixa etária e conflitos; o contador será mantido.</p><Button variant="secondary" disabled={action.isPending || reason.trim().length < 5} onClick={() => action.mutate({ path: `/slots/${b.slotId}/assignments/${person.id}/reactivate`, body: { reason } })}>Reativar esta sessão</Button></>}</div>)}
         <h3>Histórico de faltas</h3>
         {!summary.data.items.length && <p>Nenhuma falta registrada.</p>}
         {summary.data.items.map(a => <div className={s.panel} key={a.id}><p>{date(a.occurredAt, ctx.clinic.timezone)}</p><Badge state={a.state} /><p>Prazo de justificativa: {date(a.deadline, ctx.clinic.timezone)}</p></div>)}
@@ -61,7 +62,8 @@ function PersonDetails({ person, ctx, onClose }: { person: Person; ctx: Member; 
         <div className={s.actions}>
           <Button variant="secondary" disabled={action.isPending || reason.trim().length < 5 || !summary.data || summary.data.summary.count < summary.data.summary.limit} onClick={() => action.mutate({ path: `/patients/${person.id}/consequence`, body: { action: 'apply', reason } })}>Confirmar liberação do horário fixo</Button>
           <Button variant="secondary" disabled={action.isPending || reason.trim().length < 5 || !until} onClick={() => action.mutate({ path: `/patients/${person.id}/consequence`, body: { action: 'suspend', reason, until: new Date(until).toISOString() } })}>Suspender consequência</Button>
-        </div></>}
+          <Button variant="secondary" disabled={action.isPending || reason.trim().length < 5 || !summary.data} onClick={() => action.mutate({ path: `/patients/${person.id}/consequence`, body: { action: 'reset', reason } })}>Zerar contador com justificativa</Button>
+        </div><p>O reset preserva o histórico e não reativa sessões bloqueadas.</p></>}
     </>}
     {ctx.role === 'ADMIN' && person.role !== 'ADMIN' && <div className={s.panel}>
       {confirmStatus ? <form onSubmit={async e => { e.preventDefault(); const data = new FormData(e.currentTarget); try { await action.mutateAsync({ path: `/members/${person.id}/status`, body: { active: !person.active, reason: data.get('reason') } }); onClose(); } catch { /* feedback */ } }}>

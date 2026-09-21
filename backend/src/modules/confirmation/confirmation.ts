@@ -37,3 +37,13 @@ export async function advanceConfirmation(tx: Tx, ctx: Context, at = now()) {
     }
   }
 }
+
+export async function releasePending(tx: Tx, ctx: Context, id: string, reason: string, at = now()) {
+  roles(ctx, 'THERAPIST'); const a = await appointment(tx, ctx, id);
+  if (reason.trim().length < 5) throw new ConflictException('Informe o motivo da liberação.');
+  if (a.status === 'RELEASED') return a;
+  if (!['SCHEDULED', 'PENDING', 'EXPIRED'].includes(a.status) || at <= a.closesAt || at >= a.occurrence.startsAt || a.occurrence.blocked) throw new ConflictException('Só é possível liberar uma consulta futura sem confirmação após o prazo de resposta.');
+  const result = await tx.appointment.update({ where: { id }, data: { status: 'RELEASED' } });
+  await audit(tx, ctx, 'pending-released', id, { before: a.status, after: result.status, reason });
+  return result;
+}
