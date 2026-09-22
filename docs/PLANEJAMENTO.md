@@ -6,7 +6,7 @@ Atualizado em 21/09/2026. Projeto pessoal, sem vínculo com outros projetos empr
 
 Comparação do código com requisitos e planejamento: [validação de 20/09/2026](VALIDACAO-2026-09-20.md). Na validação de 20/09 havia lacunas de cobertura e 9 pacotes com alertas. Atualização de 21/09: dependências corrigidas (auditoria sem alertas), build/lint aprovados e 37 testes backend, incluindo anexos e worker reais. Cobertura de faltas: 98,39% das linhas. Limites atuais em ENTREGA.md; não há aceite integral do produto.
 
-Entregues em 17/09: cadastros internos, desvinculação/reativação de vínculo, parâmetros individuais, edição básica da grade, alocação com exceção etária, liberação de horário fixo e avisos por público/prazo. Isso não conclui convites, sessão terapêutica bloqueada nem exceções recorrentes.
+Entregues em 17/09: cadastros internos, desvinculação/reativação de vínculo, parâmetros individuais, edição básica da grade, alocação com exceção etária, liberação de horário fixo e avisos por público/prazo. Sessão terapêutica bloqueada, reativação e liberação pontual entregues em 21/09; pedido avulso sem consulta anterior entregue em 22/09 (etapa 1). Convites e exceções recorrentes continuam pendentes. Etapas 2 (configurações) e 3 (privacidade) aguardam confirmação; e-mail/SMS adiados.
 
 ## Objetivo e escopo combinado
 

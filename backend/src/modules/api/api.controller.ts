@@ -2,10 +2,10 @@ import { Controller, Get, Post, Body, Req, Param, Query, UseGuards, ParseUUIDPip
 import { ApiTags } from '@nestjs/swagger';
 import { AuthGuard, type AuthRequest, rateLimit } from '../identity/identity.js';
 import { db, transaction, audit } from '../../infrastructure/db.js';
-import { roles, appointment, patient, certificate, blockedSession } from '../../infrastructure/access.js';
+import { roles, appointment, patient, certificate } from '../../infrastructure/access.js';
 import { respond, releasePending } from '../confirmation/confirmation.js';
 import { attendance, countAbsences, consequence, decideCertificate } from '../absences/absences.js';
-import { suggestions, reserve, decideFitting, occupancy } from '../fitting/fitting.js';
+import { suggestions, reserve, decideFitting, occupancy, careSuggestions, listFittings } from '../fitting/fitting.js';
 import { schedule, assign, saveSlot, releaseAssignment, reactivateAssignment } from '../schedule/schedule.js';
 import { ResponseDto, AttendanceDto, DecisionDto, ReserveDto, ConsequenceDto, AvailabilityDto, SlotDto, AssignDto, MemberDto, ParametersDto, AlertDto, PrivacyDto, ConsentDto, MemberStatusDto, PatientParametersDto, ReasonDto } from './dto.js';
 import { listAlerts, publishAlert } from '../alerts/alerts.js';
@@ -22,8 +22,9 @@ export class ApiController {
   @Get('patients/:id/absences') async absences(@Req() r: AuthRequest, @Param('id', ParseUUIDPipe) id: string) { await patient(db, r.context, id); return { summary: await countAbsences(db, r.context, id), items: await db.absence.findMany({ where: { clinicId: r.context.clinicId, patientId: id }, orderBy: { occurredAt: 'desc' } }) }; }
   @Post('patients/:id/consequence') consequence(@Req() r: AuthRequest, @Param('id', ParseUUIDPipe) id: string, @Body() b: ConsequenceDto) { return transaction(r.context, tx => consequence(tx, r.context, id, b.action, b.reason, b.until)); }
   @Get('fittings/suggestions') suggestions(@Req() r: AuthRequest, @Query('originalId', ParseUUIDPipe) id: string, @Query('days') days: string) { return suggestions(db, r.context, id, Number(days ?? 7)); }
-  @Post('fittings') reserve(@Req() r: AuthRequest, @Body() b: ReserveDto) { return transaction(r.context, tx => reserve(tx, r.context, b.originalId, b.occurrenceId)); }
-  @Get('fittings') async fittings(@Req() r: AuthRequest) { const rows = await db.fittingRequest.findMany({ where: { clinicId: r.context.clinicId, ...(r.context.role === 'PATIENT' ? { patientId: r.context.id } : {}) }, orderBy: { createdAt: 'desc' } }); const result = []; for (const row of rows) { try { const a = await appointment(db, r.context, row.originalId); result.push({ ...row, receptionRequired: !!await blockedSession(db, r.context, row.patientId, a.slot.therapistId) }); } catch (e) { if (!(e instanceof ForbiddenException)) throw e; } } return result; }
+  @Post('fittings') reserve(@Req() r: AuthRequest, @Body() b: ReserveDto) { return transaction(r.context, tx => reserve(tx, r.context, b.originalId ?? null, b.occurrenceId)); }
+  @Get('care/suggestions') careSuggestions(@Req() r: AuthRequest, @Query('days') days: string) { return careSuggestions(db, r.context, Number(days ?? 7)); }
+  @Get('fittings') fittings(@Req() r: AuthRequest) { return listFittings(db, r.context); }
   @Post('fittings/:id/decision') decide(@Req() r: AuthRequest, @Param('id', ParseUUIDPipe) id: string, @Body() b: DecisionDto) { return transaction(r.context, tx => decideFitting(tx, r.context, id, b.decision, b.reason)); }
   @Get('certificates') async certificates(@Req() r: AuthRequest) { roles(r.context, 'PATIENT', 'THERAPIST', 'ADMIN'); if (r.context.role === 'ADMIN' && !r.context.canReview) throw new ForbiddenException(); const rows = await db.certificate.findMany({ where: { clinicId: r.context.clinicId, ...(r.context.role === 'PATIENT' ? { patientId: r.context.id } : {}) }, orderBy: { submittedAt: 'asc' } }); const result = []; for (const row of rows) { try { result.push(await certificate(db, r.context, row.id)); } catch (e) { if (!(e instanceof ForbiddenException)) throw e; } } return result; }
   @Get('certificates/:id') certificate(@Req() r: AuthRequest, @Param('id', ParseUUIDPipe) id: string) { return certificate(db, r.context, id); }

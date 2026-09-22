@@ -3,7 +3,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export class ResponseDto { @ApiProperty({ enum: ['confirm', 'cancel'] }) @IsIn(['confirm', 'cancel']) action!: 'confirm' | 'cancel'; }
 export class AttendanceDto { @ApiProperty({ enum: ['attended', 'absent'] }) @IsIn(['attended', 'absent']) outcome!: 'attended' | 'absent'; }
 export class DecisionDto { @ApiProperty({ enum: ['approve', 'reject'] }) @IsIn(['approve', 'reject']) decision!: 'approve' | 'reject'; @ApiProperty() @IsString() @MaxLength(2000) reason!: string; }
-export class ReserveDto { @ApiProperty() @IsUUID() originalId!: string; @ApiProperty() @IsUUID() occurrenceId!: string; }
+export class ReserveDto { @ApiPropertyOptional() @IsOptional() @IsUUID() originalId?: string; @ApiProperty() @IsUUID() occurrenceId!: string; }
 export class ConsequenceDto { @ApiProperty({ enum: ['apply', 'suspend', 'reset', 'reactivate'] }) @IsIn(['apply', 'suspend', 'reset', 'reactivate']) action!: 'apply' | 'suspend' | 'reset' | 'reactivate'; @ApiProperty() @IsString() @MinLength(5) @MaxLength(2000) reason!: string; @ApiPropertyOptional() @IsOptional() @IsDateString() until?: string; }
 export class AvailabilityDto { @ApiProperty() @IsInt() @Min(0) @Max(6) weekday!: number; @ApiProperty() @IsInt() @Min(0) @Max(1439) startMinute!: number; @ApiProperty() @IsInt() @Min(1) @Max(1440) endMinute!: number; }
 export class SlotDto extends AvailabilityDto { @ApiProperty() @IsInt() @Min(1) @Max(20) capacity!: number; @ApiProperty() @IsInt() @Min(0) @Max(120) minAge!: number; @ApiProperty() @IsInt() @Min(0) @Max(120) maxAge!: number; @ApiProperty() @IsString() @MinLength(1) @MaxLength(80) room!: string; }

@@ -1,5 +1,14 @@
 # Rastreabilidade
 
+## Etapa 1 · Atendimento avulso — 2026-09-22
+
+| Requisitos | Implementação / evidência | Limite |
+|---|---|---|
+| RN-22 | Pedido sem consulta de origem para sessão bloqueada; recepção aprova/recusa; consulta STANDALONE sem reativação | Sem novas integrações de e-mail/SMS |
+| RF-ENC, RN-09, RNF-46 | Elegibilidade compartilhada, reserva idempotente, isolamento, CSRF e revalidação sob lock; disputa da última vaga testada | Sem expiração de reserva inventada (D06) |
+| RF-ADM-12, RNF-49 | Auditoria de pedido/decisão/criação; 50 testes backend e lifecycle passam; 99,27% linhas / 89,37% ramos no recorte | Não representa cobertura integral |
+| Interface de encaixes | 4 cenários Chromium/Firefox passam; busca, recusa, nova solicitação, aprovação, agenda e regressão; axe e capturas 390/1440 inspecionadas | WebKit e dispositivos reais não exercitados |
+
 ## Notificações e auditoria — 2026-09-21
 
 | Requisitos | Implementação / evidência | Limite |
@@ -16,7 +25,7 @@
 |---|---|---|
 | RF-CLI-10, RN-19/20/21/25 | Bloqueio por sessão, reset e reativação com justificativa; PostgreSQL real, rollback, concorrência; interface Chromium/Firefox | Contador por clínica permanece D03; confirmadas preservadas |
 | RN-11/15 | Liberação pontual, cancelamento apenas na ocupação efetiva, aviso sem falta; reserva recusada e corrida com confirmação testadas | Novos encaixes respeitam a janela mínima RN-09 |
-| RN-22 | Reposição de sessão bloqueada exige recepção no servidor; UI desabilita aprovação de outros perfis | Pedido de atendimento sem consulta de origem ainda pendente |
+| RN-22 | Reposição de sessão bloqueada exige recepção no servidor; UI desabilita aprovação de outros perfis | Pedido sem origem entregue em 22/09, conforme etapa 1 acima |
 | RF-ADM-12, RNF-46 | Auditoria por consulta nos novos fluxos; isolamento, roles e lock comum | Complementos de avisos/auditoria no próximo incremento |
 
 

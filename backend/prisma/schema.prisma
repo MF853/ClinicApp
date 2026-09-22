@@ -209,7 +209,7 @@ model FittingRequest {
   id String @id @default(uuid()) @db.Uuid
   clinicId String @db.Uuid
   occurrenceId String @db.Uuid
-  originalId String @db.Uuid
+  originalId String? @db.Uuid
   patientId String @db.Uuid
   status Decision @default(PENDING)
   appointmentId String? @unique @db.Uuid

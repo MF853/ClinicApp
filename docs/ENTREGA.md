@@ -1,3 +1,12 @@
+## Etapa 1 · Atendimento avulso sem consulta de origem — 2026-09-22
+
+- Paciente com sessão bloqueada pode buscar horários em 7/14 dias, solicitar atendimento sem consulta anterior e acompanhar aprovação/recusa. A recepção decide com autorização no servidor; aprovação cria consulta STANDALONE, sem reativar horário fixo nem consumir limites de reposição. Recusa exige motivo e libera a reserva.
+- Reutilizados pedidos, reservas, elegibilidade, lock transacional da clínica e auditoria. Migration permite origem nula e impede pedidos avulsos pendentes duplicados. Capacidade, conflitos, disponibilidade, idade, grupo, vínculo ativo e janela de confirmação são revalidados na aprovação.
+- Prisma generate, migrations de desenvolvimento/teste, build e lint passaram. Cobertura: 50/50 testes backend em PostgreSQL real, com armazenamento, scanner e worker locais; 99,27% linhas / 89,37% ramos no recorte configurado (não representa todo o produto). Teste de lifecycle passou; sua primeira execução foi interrompida no sandbox e a execução autorizada passou. Nenhuma seed executada no banco de desenvolvimento.
+- Playwright: 4/4 cenários em Chromium/Firefox (avulso e regressão de continuidade), com paciente sem histórico, restrição do terapeuta, recusa, nova solicitação, aprovação e consulta na agenda. Axe sem violações nos cenários verificados; capturas de busca/recepção em 390/1440px inspecionadas. Sem atualização de baselines. WebKit/dispositivos reais não exercitados nesta rodada.
+- Revisão de complexidade (Ponytail): sem dependências ou novas camadas; fluxo existente atende ao caso. Revisão separada de correção/autorização/integridade: sessão fornece paciente/clínica, CSRF e DTOs preservados, recepção exclusiva mesmo após reativação, idempotência e disputa concorrente da última vaga testadas, auditoria e bloqueio preservados.
+- Escopo: RN-22 agora inclui pedido sem origem. Integrações novas de e-mail/SMS continuam adiadas; mantido o aviso de confirmação já existente para consultas aprovadas. Etapas 2 (configurações) e 3 (privacidade) aguardam confirmação do usuário. Documento de requisitos preservado.
+
 ## Pipeline de anexos e worker — 2026-09-21
 
 ## Notificações e auditoria — 2026-09-21
