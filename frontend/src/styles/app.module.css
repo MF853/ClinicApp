@@ -112,3 +112,6 @@
   .summary strong { font-size: 22px; }
   .panel, .form { padding: 20px; }
 }
+
+.categoryOption { display: flex; align-items: center; gap: 12px; min-height: 48px; margin-bottom: 8px; cursor: pointer; }
+.categoryOption input { flex: 0 0 22px; width: 22px; height: 22px; min-height: 22px; padding: 0; box-shadow: none; }

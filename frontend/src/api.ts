@@ -9,7 +9,7 @@ export async function api<T>(path: string, body?: unknown): Promise<T> {
   return data;
 }
 export function useAction() { const client = useQueryClient(); return useMutation({ mutationFn: ({ path, body }: { path: string; body: unknown }) => api(path, body), onSuccess: () => client.invalidateQueries() }); }
-export interface Clinic { id: string; name: string; timezone: string; particular: boolean; absenceLimit: number; justificationDays: number; confirmationHour: number; closeHours: number }
+export interface Clinic { id: string; name: string; timezone: string; particular: boolean; absenceLimit: number; justificationDays: number; confirmationHour: number; closeHours: number; evaluationDays: number; replacementPerAbsence: number; replacementPerWindow: number; holidays: string[]; requiredCategories: string[] }
 export interface Member { id: string; role: 'PATIENT' | 'THERAPIST' | 'ADMIN' | 'RECEPTION'; clinic: Clinic; canReview: boolean; user: { name: string; email: string } }
 export interface Session { context: Member; memberships: Member[] }
 export interface Appointment { id: string; patientId: string; patientName: string; status: string; opensAt: string; closesAt: string }
@@ -20,3 +20,5 @@ export function date(value: string, zone: string, options: Intl.DateTimeFormatOp
 
 export const weekdays = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 export const minuteTime = (value: number) => `${String(Math.floor(value / 60)).padStart(2, '0')}:${String(value % 60).padStart(2, '0')}`;
+
+export const certificateCategories: Record<string, string> = { SAUDE_PACIENTE: 'Problema de saúde do paciente', SAUDE_DEPENDENTE: 'Problema de saúde de dependente', EMERGENCIA_FAMILIAR: 'Emergência familiar', COMPROMISSO_PROFISSIONAL: 'Compromisso profissional inadiável', DESLOCAMENTO: 'Intercorrência de deslocamento', FORCA_MAIOR: 'Força maior', OUTRO: 'Outro' };

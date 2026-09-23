@@ -12,7 +12,6 @@ export async function submitCertificate(ctx: Context, body: Submission, files: E
   roles(ctx, 'PATIENT');
   if (!categories.includes(body.category) || body.description.trim().length < 5) throw new BadRequestException('Selecione a categoria e descreva o motivo.');
   if (files.length > 3 || files.some(f => f.size > 10 * 1024 * 1024 || !f.size)) throw new BadRequestException('Envie até três arquivos, cada um com no máximo 10 MB.');
-  if (ctx.clinic.requiredCategories.includes(body.category) && !files.length) throw new BadRequestException('Esta categoria exige um documento comprobatório.');
   const absence = await db.absence.findFirst({ where: { id: body.absenceId, clinicId: ctx.clinicId, patientId: ctx.id } });
   if (!absence || at > absence.deadline) throw new ConflictException('O prazo terminou ou a falta não pertence a este perfil. Fale com a clínica.');
   const prepared: { id: string; objectKey: string; mime: string; size: number; hash: string; buffer: Buffer }[] = [];
@@ -26,6 +25,7 @@ export async function submitCertificate(ctx: Context, body: Submission, files: E
   try {
     for (const file of prepared) await storeObject(file.objectKey, file.buffer);
     const result = await transaction(ctx, async tx => {
+      if (ctx.clinic.requiredCategories.includes(body.category) && !files.length) throw new BadRequestException('Esta categoria exige um documento comprobatório.');
       const a = await tx.absence.findFirst({ where: { id: body.absenceId, clinicId: ctx.clinicId, patientId: ctx.id } });
       if (!a || now() > a.deadline) throw new ConflictException('O prazo de envio terminou.');
       if (await tx.certificate.findUnique({ where: { absenceId: a.id } })) throw new ConflictException('Esta falta já possui justificativa. Consulte o acompanhamento.');

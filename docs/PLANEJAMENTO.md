@@ -1,12 +1,12 @@
 # Planejamento do ClinicApp
 
-Atualizado em 21/09/2026. Projeto pessoal, sem vínculo com outros projetos empresariais. Este arquivo registra o plano e a situação da entrega; não substitui nem altera o [documento de requisitos](Documento-de-Requisitos-ClinicApp-v2.md).
+Atualizado em 23/09/2026. Projeto pessoal, sem vínculo com outros projetos empresariais. Este arquivo registra o plano e a situação da entrega; não substitui nem altera o [documento de requisitos](Documento-de-Requisitos-ClinicApp-v2.md).
 
 ## Validação atual
 
 Comparação do código com requisitos e planejamento: [validação de 20/09/2026](VALIDACAO-2026-09-20.md). Na validação de 20/09 havia lacunas de cobertura e 9 pacotes com alertas. Atualização de 21/09: dependências corrigidas (auditoria sem alertas), build/lint aprovados e 37 testes backend, incluindo anexos e worker reais. Cobertura de faltas: 98,39% das linhas. Limites atuais em ENTREGA.md; não há aceite integral do produto.
 
-Entregues em 17/09: cadastros internos, desvinculação/reativação de vínculo, parâmetros individuais, edição básica da grade, alocação com exceção etária, liberação de horário fixo e avisos por público/prazo. Sessão terapêutica bloqueada, reativação e liberação pontual entregues em 21/09; pedido avulso sem consulta anterior entregue em 22/09 (etapa 1). Convites e exceções recorrentes continuam pendentes. Etapas 2 (configurações) e 3 (privacidade) aguardam confirmação; e-mail/SMS adiados.
+Entregues em 17/09: cadastros internos, desvinculação/reativação de vínculo, parâmetros individuais, edição básica da grade, alocação com exceção etária, liberação de horário fixo e avisos por público/prazo. Sessão terapêutica bloqueada, reativação e liberação pontual entregues em 21/09; pedido avulso sem consulta anterior entregue em 22/09 (etapa 1). Convites e exceções recorrentes continuam pendentes. Etapa 2 entregue em 23/09: janela, limites de reposição, feriados para dias úteis e categorias de comprovante. Etapa 3 (privacidade) aguarda confirmação; e-mail/SMS adiados.
 
 ## Objetivo e escopo combinado
 
@@ -46,7 +46,7 @@ Esses pontos descrevem código conectado, não uma declaração de cobertura com
 - Cadastro público de terapeuta, convite/autocadastro de paciente e vinculação de contas já existentes (RF-ADM-01/02/07).
 - Termos/consentimentos versionados em fluxo de produto; exportação/exclusão efetiva de dados e gestão de solicitações (RF-ADM-08/09). A API inicial apenas registra solicitações/aceites. 2FA pendente.
 - Edição integral da grade, férias/feriados/bloqueios recorrentes, alterações solicitadas pela clínica, reativação terapêutica e liberação pontual de pendência sem penalidade (RF-TER-01/04, RF-CLI-10, RN-15/22).
-- Configuração completa de calendário, janela, retenção, reposições e alertas clínicos, com telas e validações; parâmetros individuais básicos já entregues. Reativação precisa reavaliar vagas explicitamente.
+- Retenção depende de definição jurídica; alertas clínicos e exceções de calendário continuam pendentes. Janela, limites de reposição, feriados para dias úteis e categorias obrigatórias entregues na etapa 2; parâmetros individuais básicos já entregues.
 - Informação complementar em atestados e cobertura completa dos estados/contestação. RF-FAL-09 permanece parcial: não há extração confiável de data de PDF/imagem.
 - Reputação explicável por paciente/terapeuta, pesos configuráveis, recuperação, consentimento e ordenação do pool. Não foi implementada uma pontuação alternativa.
 - Pool de encaixe, prioridade de 15 dias, ofertas temporizadas e lista de espera conforme prioridade MoSCoW; indicadores agregados/exportação de relatórios.

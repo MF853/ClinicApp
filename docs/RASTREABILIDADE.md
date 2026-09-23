@@ -1,5 +1,15 @@
 # Rastreabilidade
 
+## Etapa 2 · Configurações — 2026-09-23
+
+| Requisitos | Implementação / evidência | Limite |
+|---|---|---|
+| RF-CLI-02/04, RN-09/24/26, RNF-48 | Parâmetros existentes ampliados com janela e calendário de dias úteis; validação HTTP e prazos preservados | Feriados não são bloqueios de agenda; retenção jurídica pendente |
+| RF-ENC-10, RN-45 | Limites por falta e janela editáveis e aplicados às reservas; integração PostgreSQL | Pedidos avulsos continuam fora do limite de reposição |
+| RN-29 | Categorias obrigatórias configuráveis; exigência relida dentro do lock; texto do paciente acompanha configuração | Justificativas anteriores preservadas |
+| RF-ADM-12, RNF-46/49 | Auditoria antes/depois, isolamento/CSRF/perfis; 51 testes backend passam, 99,27% linhas / 89,79% ramos no recorte | Não é cobertura integral da aplicação |
+| Interface de parâmetros e justificativas | 2 cenários Chromium/Firefox passam; axe, persistência, recusa de acesso e capturas 390/1440 inspecionadas | Sem teste WebKit/dispositivos reais |
+
 ## Etapa 1 · Atendimento avulso — 2026-09-22
 
 | Requisitos | Implementação / evidência | Limite |
