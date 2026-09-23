@@ -1,5 +1,15 @@
 # Rastreabilidade
 
+## Etapa 3 · Jornada básica de privacidade — 2026-09-23
+
+| Requisitos | Implementação / evidência | Limite |
+|---|---|---|
+| RF-ADM-09 | Pedidos autenticados de exportação/exclusão com protocolo, clínica, prazo, acompanhamento e resposta administrativa | Execução da exportação/exclusão ainda pendente |
+| RNF-44 | Inclui acesso, correção e revogação; prazo de 15 dias, destaque de atraso, estados e resposta | Não comprova atendimento efetivo do direito; canal sem vínculo ativo pendente |
+| RF-ADM-12, RNF-46 | Transação, auditoria mínima, idempotência, isolamento e resposta concorrente testados em PostgreSQL | Descrição/resposta ficam no pedido, não duplicadas na auditoria |
+| RF-ADM-08, D07 | Informações sobre dados com versão identificada, sem aceite jurídico presumido | Termos/política aprovados, consentimentos e base legal ainda pendentes |
+| Interface / RNF-49 | 53 testes backend passam; 4 cenários Chromium/Firefox, axe e capturas 390/1440 revisados | Recorte de cobertura existente exclui privacidade; não é certificação LGPD ou WCAG |
+
 ## Etapa 2 · Configurações — 2026-09-23
 
 | Requisitos | Implementação / evidência | Limite |
@@ -72,7 +82,7 @@ Situação atual por incremento e requisitos: [VALIDACAO-2026-09-20.md](VALIDACA
 | Cadastros, grade, parâmetros individuais, avisos | Entregas de 17/09 confirmadas no código; suíte atual com 26 testes backend aprovada |
 | RF-CLI-10, RN-15/19/22/25 | Liberação fixa existe; faltam ciclo de bloqueio terapêutico, liberação pontual, reset na UI e reativação completa |
 | RF-FAL-08/09, RF-NOT-01/02/03 | Pré-validação inconclusiva, canais externos e parte dos destinatários/gatilhos pendentes |
-| RF-ADM-08/09/12, RNF-38/44 | Registro inicial de aceites/solicitações; jornadas de direitos e detalhamento da auditoria incompletos |
+| RF-ADM-08/09/12, RNF-38/44 | Jornada básica de solicitações/análise/resposta entregue em 23/09; execução dos direitos e termos/consentimentos aprovados ainda incompletos |
 | RNF-49 | Recorte 79,21% linhas; pasta de faltas 67,54%; upload/processamento/contestação sem cobertura funcional; não aceito integralmente |
 | RNF-34/40/51/52/53 | Gestão de chaves, CI/segurança, observabilidade, operação e mobile ainda parciais ou pendentes |
 

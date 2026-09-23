@@ -1,3 +1,4 @@
+import { createPrivacyRequest, listPrivacyRequests, respondPrivacyRequest } from '../privacy/privacy.js';
 import { Controller, Get, Post, Body, Req, Param, Query, UseGuards, ParseUUIDPipe, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthGuard, type AuthRequest, rateLimit } from '../identity/identity.js';
@@ -7,7 +8,7 @@ import { respond, releasePending } from '../confirmation/confirmation.js';
 import { attendance, countAbsences, consequence, decideCertificate } from '../absences/absences.js';
 import { suggestions, reserve, decideFitting, occupancy, careSuggestions, listFittings } from '../fitting/fitting.js';
 import { schedule, assign, saveSlot, releaseAssignment, reactivateAssignment } from '../schedule/schedule.js';
-import { ResponseDto, AttendanceDto, DecisionDto, ReserveDto, ConsequenceDto, AvailabilityDto, SlotDto, AssignDto, MemberDto, ParametersDto, AlertDto, PrivacyDto, ConsentDto, MemberStatusDto, PatientParametersDto, ReasonDto } from './dto.js';
+import { ResponseDto, AttendanceDto, DecisionDto, ReserveDto, ConsequenceDto, AvailabilityDto, SlotDto, AssignDto, MemberDto, ParametersDto, AlertDto, PrivacyDto, PrivacyResponseDto, ConsentDto, MemberStatusDto, PatientParametersDto, ReasonDto } from './dto.js';
 import { listAlerts, publishAlert } from '../alerts/alerts.js';
 import { createMember, memberStatus, patientParameters } from '../members/members.js';
 @ApiTags('Clínica')
@@ -53,6 +54,9 @@ export class ApiController {
   @Get('alerts') alerts(@Req() r: AuthRequest) { return listAlerts(db, r.context); }
   @Post('alerts') alert(@Req() r: AuthRequest, @Body() b: AlertDto) { return transaction(r.context, tx => publishAlert(tx, r.context, b)); }
   @Get('notifications') notifications(@Req() r: AuthRequest) { return db.notification.findMany({ where: { clinicId: r.context.clinicId, userId: r.context.userId }, orderBy: { createdAt: 'desc' }, take: 50 }); }
-  @Post('privacy/requests') privacy(@Req() r: AuthRequest, @Body() b: PrivacyDto) { return db.privacyRequest.create({ data: { userId: r.context.userId, type: b.type } }); }
+  @Post('privacy/requests') privacy(@Req() r: AuthRequest, @Body() b: PrivacyDto) { return transaction(r.context, tx => createPrivacyRequest(tx, r.context, b)); }
+  @Get('privacy/requests') privacyRequests(@Req() r: AuthRequest) { return listPrivacyRequests(db, r.context); }
+  @Get('privacy/inbox') privacyInbox(@Req() r: AuthRequest) { return listPrivacyRequests(db, r.context, true); }
+  @Post('privacy/requests/:id/response') privacyResponse(@Req() r: AuthRequest, @Param('id', ParseUUIDPipe) id: string, @Body() b: PrivacyResponseDto) { return transaction(r.context, tx => respondPrivacyRequest(tx, r.context, id, b)); }
   @Post('consents') consent(@Req() r: AuthRequest, @Body() b: ConsentDto) { return db.consent.upsert({ where: { userId_document_version: { userId: r.context.userId, ...b } }, create: { userId: r.context.userId, ...b }, update: {} }); }
 }

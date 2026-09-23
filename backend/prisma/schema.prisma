@@ -270,9 +270,20 @@ model Alert {
 model PrivacyRequest {
   id String @id @default(uuid()) @db.Uuid
   userId String @db.Uuid
+  clinicId String? @db.Uuid
+  requestKey String? @db.Uuid
   type String
+  details String @default("")
+  status String @default("OPEN")
+  response String @default("")
+  respondedBy String? @db.Uuid
+  respondedAt DateTime? @db.Timestamptz
+  dueAt DateTime @db.Timestamptz
   createdAt DateTime @default(now()) @db.Timestamptz
+  @@unique([userId,requestKey])
+  @@index([clinicId,status,dueAt])
 }
+
 model Consent {
   id String @id @default(uuid()) @db.Uuid
   userId String @db.Uuid

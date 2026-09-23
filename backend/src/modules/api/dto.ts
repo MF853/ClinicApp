@@ -18,7 +18,15 @@ export class ParametersDto { @ApiProperty() @IsInt() @Min(1) @Max(100) absenceLi
   @ApiPropertyOptional({ enum: categories, isArray: true }) @ValidateIf((_o, v) => v !== undefined) @IsArray() @ArrayUnique() @ArrayMaxSize(7) @IsIn(categories, { each: true }) requiredCategories?: string[];
 }
 export class AlertDto { @ApiProperty() @IsIn(['ALL', 'PATIENT', 'THERAPIST']) audience!: string; @ApiProperty() @IsString() @MinLength(5) @MaxLength(2000) text!: string; @ApiProperty() @IsDateString() endsAt!: string; }
-export class PrivacyDto { @ApiProperty() @IsIn(['EXPORT', 'DELETE']) type!: string; }
+export class PrivacyDto {
+  @ApiProperty() @IsIn(['ACCESS', 'CORRECT', 'EXPORT', 'DELETE', 'REVOKE']) type!: string;
+  @ApiProperty() @IsString() @MinLength(5) @MaxLength(2000) details!: string;
+  @ApiProperty() @IsUUID() requestKey!: string;
+}
+export class PrivacyResponseDto {
+  @ApiProperty() @IsIn(['IN_REVIEW', 'RESPONDED']) status!: 'IN_REVIEW' | 'RESPONDED';
+  @ApiProperty() @IsString() @MaxLength(2000) response!: string;
+}
 export class ConsentDto { @ApiProperty() @IsIn(['TERMS', 'PRIVACY', 'HEALTH']) document!: string; @ApiProperty() @IsString() @MinLength(1) @MaxLength(40) version!: string; }
 
 export class MemberStatusDto { @IsBoolean() active!: boolean; @IsString() @MinLength(5) @MaxLength(1000) reason!: string; }

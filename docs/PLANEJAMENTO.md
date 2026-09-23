@@ -6,7 +6,7 @@ Atualizado em 23/09/2026. Projeto pessoal, sem vínculo com outros projetos empr
 
 Comparação do código com requisitos e planejamento: [validação de 20/09/2026](VALIDACAO-2026-09-20.md). Na validação de 20/09 havia lacunas de cobertura e 9 pacotes com alertas. Atualização de 21/09: dependências corrigidas (auditoria sem alertas), build/lint aprovados e 37 testes backend, incluindo anexos e worker reais. Cobertura de faltas: 98,39% das linhas. Limites atuais em ENTREGA.md; não há aceite integral do produto.
 
-Entregues em 17/09: cadastros internos, desvinculação/reativação de vínculo, parâmetros individuais, edição básica da grade, alocação com exceção etária, liberação de horário fixo e avisos por público/prazo. Sessão terapêutica bloqueada, reativação e liberação pontual entregues em 21/09; pedido avulso sem consulta anterior entregue em 22/09 (etapa 1). Convites e exceções recorrentes continuam pendentes. Etapa 2 entregue em 23/09: janela, limites de reposição, feriados para dias úteis e categorias de comprovante. Etapa 3 (privacidade) aguarda confirmação; e-mail/SMS adiados.
+Entregues em 17/09: cadastros internos, desvinculação/reativação de vínculo, parâmetros individuais, edição básica da grade, alocação com exceção etária, liberação de horário fixo e avisos por público/prazo. Sessão terapêutica bloqueada, reativação e liberação pontual entregues em 21/09; pedido avulso sem consulta anterior entregue em 22/09 (etapa 1). Convites e exceções recorrentes continuam pendentes. Etapa 2 entregue em 23/09: janela, limites de reposição, feriados para dias úteis e categorias de comprovante. Etapa 3 entregue em 23/09 no escopo de jornada básica: informações sobre dados, solicitações, acompanhamento e resposta administrativa. Execução de exportação/exclusão/revogação e documentos jurídicos aprovados permanecem pendentes; e-mail/SMS adiados.
 
 ## Objetivo e escopo combinado
 
@@ -21,7 +21,7 @@ Stack: React/Vite/TypeScript, React Router e TanStack Query, CSS Modules e compo
 | Incremento | Objetivo | Situação real |
 |---|---|---|
 | 1. Inspeção e decisões | Ler requisitos, preservar projeto, consultar ferramentas e definir decisões | Concluído. Só havia o documento; nenhum protótipo reaproveitado. Referências e commits locais em references/. |
-| 2. Persistência e identidade | Modelo, migrations, autenticação, vínculos, clínica/perfil ativo | Base implementada. PostgreSQL real, sessões persistidas, Argon2id, CSRF, cadastro interno por API e interface, recuperação de senha e alternância. Faltam convites, associação de contas existentes, privacidade, administrador do sistema e testes completos. |
+| 2. Persistência e identidade | Modelo, migrations, autenticação, vínculos, clínica/perfil ativo | Base implementada. PostgreSQL real, sessões persistidas, Argon2id, CSRF, cadastro interno por API e interface, recuperação de senha e alternância. Jornada básica de solicitações de privacidade entregue; faltam convites, associação de contas existentes, execução dos direitos, documentos jurídicos, administrador do sistema e testes completos. |
 | 3. Agenda e encaixe | Recorrência, ocorrência, confirmação e reserva transacional | Núcleo implementado e testado em PostgreSQL, incluindo disputa pela última vaga. Interfaces de agenda, confirmação e solicitação/decisão conectadas. Edição completa da grade e exceções ainda parciais. |
 | 4. Faltas, atestados e worker | Contador, justificativa, decisões, anexos e processamento persistente | Núcleo de faltas testado; upload, quarentena, cifragem local, antimalware, decisões e worker implementados. Validação ponta a ponta e robustez operacional ainda incompletas. |
 | 5. Interfaces, comunicação e mobile | Telas por perfil, SSE, notificações e Capacitor | Web React conectada; SSE, avisos por público/prazo e e-mail local implementados. Capacitor apenas dependências/configuração, sem projeto nativo compilado. Comunicação direta, push e SMS pendentes. |
@@ -44,7 +44,7 @@ Esses pontos descrevem código conectado, não uma declaração de cobertura com
 
 ### Domínio e administração
 - Cadastro público de terapeuta, convite/autocadastro de paciente e vinculação de contas já existentes (RF-ADM-01/02/07).
-- Termos/consentimentos versionados em fluxo de produto; exportação/exclusão efetiva de dados e gestão de solicitações (RF-ADM-08/09). A API inicial apenas registra solicitações/aceites. 2FA pendente.
+- Termos/consentimentos aprovados e versionados no fluxo de produto; exportação/exclusão/correção/revogação efetiva de dados (RF-ADM-08/09, RNF-44). Gestão de solicitações, análise e resposta administrativa entregues na etapa 3. Resposta registrada não comprova execução do direito. 2FA pendente.
 - Edição integral da grade, férias/feriados/bloqueios recorrentes, alterações solicitadas pela clínica, reativação terapêutica e liberação pontual de pendência sem penalidade (RF-TER-01/04, RF-CLI-10, RN-15/22).
 - Retenção depende de definição jurídica; alertas clínicos e exceções de calendário continuam pendentes. Janela, limites de reposição, feriados para dias úteis e categorias obrigatórias entregues na etapa 2; parâmetros individuais básicos já entregues.
 - Informação complementar em atestados e cobertura completa dos estados/contestação. RF-FAL-09 permanece parcial: não há extração confiável de data de PDF/imagem.
