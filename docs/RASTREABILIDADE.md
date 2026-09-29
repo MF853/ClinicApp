@@ -1,5 +1,24 @@
 # Rastreabilidade
 
+## Entregáveis acadêmicos · revisão — 2026-09-28
+
+| Solicitação / base | Entrega / evidência | Limite |
+|---|---|---|
+| Lean Canvas, nove blocos, A3 horizontal | `output/pdf/ClinicApp-Lean-Canvas.pdf` (nova versão); texto extraído e render inspecionado | Receitas, custos, canais e métricas como hipóteses; vantagem difícil de copiar não estabelecida |
+| Pitch de dez slides com notas | `output/presentations/ClinicApp-Pitch-Academico.pptx`; validador sem falhas, dez notas, 540 s sugeridos, 1.069 palavras | Duração estimada; PowerPoint nativo não testado; New Zen precisa estar instalada |
+| Capturas reais com dados fictícios | Quatro capturas da rodada anterior reutilizadas; recorte de altura na agenda e máscara de cantos | Sem nova execução do sistema nesta revisão |
+| D01, D04, D06, D07 e requisitos v2 (seções 2, 6, 9.5, 9.6, 11.5) | Decisão humana, reserva durante análise, grupos pela capacidade configurada e estágio de validação explícitos | Não comprova impacto, mercado, conformidade LGPD ou prontidão para produção |
+
+## Entregáveis acadêmicos — 2026-09-28
+
+| Solicitação / base | Entrega / evidência | Limite |
+|---|---|---|
+| Lean Canvas, nove blocos | `output/pdf/ClinicApp-Lean-Canvas.pdf`; uma página A3 horizontal, identidade do projeto, conteúdo extraído e render final inspecionado | Canais, receitas e custos são hipóteses; vantagem difícil de copiar ainda não estabelecida |
+| Pitch acadêmico de dez minutos | `output/presentations/ClinicApp-Pitch-Academico.pptx`; dez slides 16:9, texto editável, notas com 1.044 palavras e 540 segundos sugeridos | Duração estimada; ensaio humano e abertura no PowerPoint não realizados; New Zen deve estar instalada para preservar a aparência |
+| Agenda, confirmação e encaixe | Capturas do frontend/API reais com seed fictícia e PostgreSQL exclusivo na porta 55439; confirmação, desmarcação, busca, solicitação e aprovação exercitadas | Sem dados reais, sem teste de anexos/canais externos/worker e sem alegação de piloto clínico |
+| D01, D06, D07 e requisitos v2 | Aprovação humana descrita, reserva durante análise, benefícios esperados e estágio de validação explícitos | Não comprova impacto clínico, vantagem competitiva, adequação ao mercado ou conformidade jurídica |
+| Integridade dos entregáveis | Validação de pacote/geometria sem achados, dez notas, quatro imagens; arquivo final reimportado e dez renders revisados; hashes em ENTREGA.md | Ferramenta de renderização não é PowerPoint; nenhum requisito funcional marcado como concluído por esta entrega |
+
 ## Etapa 3 · Jornada básica de privacidade — 2026-09-23
 
 | Requisitos | Implementação / evidência | Limite |
