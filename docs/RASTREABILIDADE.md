@@ -1,5 +1,15 @@
 # Rastreabilidade
 
+## Roteiro de demonstração após o pitch — 2026-09-30
+
+PDF do guia: `output/pdf/ClinicApp-Guia-Demonstracao.pdf` (sete páginas A4). Conversão do Markdown com verificação textual pypdf e inspeção dos renders Poppler; não constitui novo ensaio funcional.
+
+| Solicitação / base | Entrega / evidência | Limite |
+|---|---|---|
+| Guia prático após os slides 4–6 e 8 | `docs/ROTEIRO-DEMONSTRACAO.md`: comandos, contas, sequência, resultados e recuperação; conteúdo dos dez slides extraído por ZIP/XML | Conferência documental e de código; sem novo ensaio ao vivo |
+| Alteração em um acesso refletida em outro | Confirmação/cancelamento, reserva/aprovação, justificativa/decisão e variante Beatriz → Rafael; SSE conferido no código, intervalo de 5 s | Latência não medida nesta rodada; variante entre pacientes ainda requer ensaio |
+| Preparação reproduzível e limites de acesso | Seed, scripts, schema, páginas e módulos conferidos; instruções sobre limpeza destrutiva, sessões e permissões | Banco não modificado; não representa nova aceitação de requisito funcional |
+
 ## Entregáveis acadêmicos · revisão — 2026-09-28
 
 | Solicitação / base | Entrega / evidência | Limite |
