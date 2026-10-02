@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api, date, roleNames, useAction, weekdays, minuteTime, type Member, type Absence } from '../api';
-import { Badge, Button, Field, Loading, Message, Modal, EmptyState } from '../components/ui';
+import { Avatar, Badge, Button, Field, Loading, Message, Modal, EmptyState } from '../components/ui';
 import s from '../styles/app.module.css';
 
 export interface Person { id: string; role: Member['role']; active: boolean; absenceLimit: number | null; justificationDays: number | null; registration: string; user: { name: string; email: string; phone: string } }
@@ -37,7 +37,7 @@ function PersonDetails({ person, ctx, onClose }: { person: Person; ctx: Member; 
   const action = useAction(), [reason, setReason] = useState(''), [until, setUntil] = useState(''), [confirmStatus, setConfirmStatus] = useState(false);
   const summary = useQuery({ queryKey: ['absence-summary', ctx.id, person.id], enabled: person.role === 'PATIENT' && person.active,
     queryFn: () => api<{ summary: { count: number; limit: number; blockedSessions: { slotId: string; slot: { weekday: number; minute: number; room: string } }[] }; items: Absence[] }>(`/patients/${person.id}/absences`) });
-  return <Modal title={person.user.name} onClose={onClose}>
+  return <Modal title={<span className={s.personRow}><Avatar name={person.user.name} />{person.user.name}</span>} onClose={onClose}>
     <p>{roleNames[person.role]} · {person.active ? 'Vínculo ativo' : 'Vínculo inativo'}</p><p>{person.user.email} · {person.user.phone}</p>
     {person.registration && <p>Registro profissional: {person.registration}</p>}
     {person.role === 'PATIENT' && person.active && <>
@@ -86,7 +86,7 @@ export function Patients({ ctx }: { ctx: Member }) {
     <div className={s.split}><Field label="Buscar por nome ou e-mail"><input type="search" value={search} onChange={e => setSearch(e.target.value)} /></Field>
       {ctx.role === 'ADMIN' && <Field label="Filtrar perfil"><select value={filter} onChange={e => setFilter(e.target.value)}><option value="PATIENT">Pacientes</option><option value="THERAPIST">Terapeutas</option><option value="RECEPTION">Recepção</option><option value="ALL">Todos</option></select></Field>}
     </div>
-    {people.isPending ? <Loading /> : people.error ? <Message error>{people.error.message}</Message> : !visible?.length ? <EmptyState>Nenhum vínculo encontrado com estes filtros. Tente ajustar a busca ou o perfil selecionado.</EmptyState> : visible.map(p => <article className={s.panel} key={p.id}><div className={s.row}><div><h2>{p.user.name}</h2><p>{p.user.email}</p><small>{roleNames[p.role]} · {p.active ? 'Ativo' : 'Inativo'}</small></div><Button variant="secondary" onClick={() => setSelected(p.id)}>Ver acompanhamento</Button></div></article>)}
+    {people.isPending ? <Loading /> : people.error ? <Message error>{people.error.message}</Message> : !visible?.length ? <EmptyState>Nenhum vínculo encontrado com estes filtros. Tente ajustar a busca ou o perfil selecionado.</EmptyState> : visible.map(p => <article className={s.panel} key={p.id}><div className={s.row}><div className={s.personRow}><Avatar name={p.user.name} /><div><h2>{p.user.name}</h2><p>{p.user.email}</p><small>{roleNames[p.role]} · {p.active ? 'Ativo' : 'Inativo'}</small></div></div><Button variant="secondary" onClick={() => setSelected(p.id)}>Ver acompanhamento</Button></div></article>)}
     {creating && <CreatePerson ctx={ctx} onClose={() => setCreating(false)} />}
     {person && <PersonDetails key={person.id} person={person} ctx={ctx} onClose={() => setSelected('')} />}
   </>;

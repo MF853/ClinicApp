@@ -37,7 +37,8 @@
   line-height: 1.5;
   font-synthesis: none;
   color: var(--ink);
-  background: var(--surface);
+  background: radial-gradient(1100px 700px at 10% -10%, var(--clay-bg) 0%, transparent 55%), radial-gradient(900px 700px at 100% 110%, var(--lilac-bg) 0%, transparent 55%), var(--surface);
+  background-attachment: fixed;
   --purple: #845ec2;
   --lilac: #c493ff;
   --cream: #fefedf;
@@ -71,6 +72,7 @@
   --gray-bg: #f8f7f4;
   --clay: #a65a28;
   --clay-bg: #fbeee4;
+  --lilac-bg: #efe6fa;
   --radius: 12px;
   --panel-radius: 20px;
 }

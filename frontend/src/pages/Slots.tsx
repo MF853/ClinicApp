@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api, useAction, weekdays, minuteTime, type Member } from '../api';
 import type { Person } from './Members';
-import { Badge, Button, Field, Loading, Message, Modal, EmptyState } from '../components/ui';
+import { Avatar, Badge, Button, Field, Loading, Message, Modal, EmptyState } from '../components/ui';
 import s from '../styles/app.module.css';
 interface Slot { id: string; weekday: number; minute: number; duration: number; capacity: number; minAge: number; maxAge: number; room: string; therapist: string; therapistId: string; blocked: boolean; assignments: { patientId: string; name: string }[] }
 
@@ -73,7 +73,7 @@ export function Slots({ ctx }: { ctx: Member }) {
   for (const slot of slots ?? []) { const key = `${slot.weekday}/${slot.minute}`; cells.set(key, [...(cells.get(key) ?? []), slot]); }
   const today = new Date().getDay();
   function card(slot: Slot) { return <article className={s.slot} key={slot.id}>
-    <h2>{slot.therapist}</h2>
+    <div className={s.personRow}><Avatar name={slot.therapist} /><h2>{slot.therapist}</h2></div>
     <p>{slot.room}</p>
     {slot.assignments.length ? <p>{slot.assignments.length}/{slot.capacity} pacientes fixos</p> : <Badge state={slot.blocked ? 'BLOCKED' : 'FREE'} />}
     <div className={s.actions}><Button variant="secondary" onClick={() => setDetail(slot)}>Ver horário</Button></div>
@@ -100,7 +100,7 @@ export function Slots({ ctx }: { ctx: Member }) {
       <p>{detail.therapist} · {detail.room}</p>
       <p>{detail.minAge}–{detail.maxAge} anos · {detail.assignments.length}/{detail.capacity} pacientes fixos</p>
       {detail.blocked && <Message>Horário bloqueado.</Message>}
-      {detail.assignments.map(patient => <div key={patient.patientId} className={s.panel}><p>{patient.name}</p>{ctx.role !== 'RECEPTION' && <Button variant="secondary" onClick={() => { setRelease({ slot: detail, patient }); setDetail(null); }}>Liberar horário fixo</Button>}</div>)}
+      {detail.assignments.map(patient => <div key={patient.patientId} className={s.panel}><div className={s.personRow}><Avatar name={patient.name} /><p>{patient.name}</p></div>{ctx.role !== 'RECEPTION' && <Button variant="secondary" onClick={() => { setRelease({ slot: detail, patient }); setDetail(null); }}>Liberar horário fixo</Button>}</div>)}
       <div className={s.actions}>{ctx.role === 'THERAPIST' && <Button variant="secondary" onClick={() => { setEditing(detail); setDetail(null); }}>Editar horário</Button>}<Button disabled={detail.blocked || detail.assignments.length >= detail.capacity} onClick={() => { setAllocation(detail); setDetail(null); }}>Alocar paciente</Button></div>
     </Modal>}
     {editing && <SlotForm slot={editing === 'new' ? undefined : editing} onClose={() => setEditing(null)} />}
