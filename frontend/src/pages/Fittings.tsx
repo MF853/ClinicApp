@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api, date, useAction, type Member, type Occurrence } from '../api';
-import { Button, Field, Message, Badge, Loading } from '../components/ui';
+import { Button, Field, Message, Badge, Loading, EmptyState } from '../components/ui';
 import s from '../styles/app.module.css';
 interface Request {
   id: string; originalId: string | null; receptionRequired: boolean; status: string; createdAt: string; reason?: string;
@@ -70,6 +70,6 @@ export function Fittings({ ctx }: { ctx: Member }) {
         <Button disabled={action.isPending || (r.receptionRequired && ctx.role !== 'RECEPTION')} onClick={() => action.mutate({ path: `/fittings/${r.id}/decision`, body: { decision: 'approve', reason: '' } })}>{r.originalId ? 'Aprovar encaixe' : 'Aprovar atendimento'}</Button>
         <Button variant="secondary" disabled={action.isPending || reason.trim().length < 5 || (!r.originalId && ctx.role !== 'RECEPTION')} onClick={() => action.mutate({ path: `/fittings/${r.id}/decision`, body: { decision: 'reject', reason } })}>Recusar com motivo</Button>
       </div>}
-    </article>) : <div className={s.empty}>Nenhuma solicitação neste perfil.</div>}
+    </article>) : <EmptyState>Nenhuma solicitação por aqui ainda. Quando você pedir um encaixe ou reposição, o andamento aparece nesta lista.</EmptyState>}
   </>;
 }

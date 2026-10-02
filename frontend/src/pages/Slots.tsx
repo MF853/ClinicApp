@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api, useAction, weekdays, minuteTime, type Member } from '../api';
 import type { Person } from './Members';
-import { Button, Field, Loading, Message, Modal } from '../components/ui';
+import { Badge, Button, Field, Loading, Message, Modal, EmptyState } from '../components/ui';
 import s from '../styles/app.module.css';
 interface Slot { id: string; weekday: number; minute: number; duration: number; capacity: number; minAge: number; maxAge: number; room: string; therapist: string; therapistId: string; blocked: boolean; assignments: { patientId: string; name: string }[] }
 
@@ -65,19 +65,44 @@ function Release({ slot, patient, onClose }: { slot: Slot; patient: Slot['assign
 
 export function Slots({ ctx }: { ctx: Member }) {
   const query = useQuery({ queryKey: ['slots', ctx.id], queryFn: () => api<Slot[]>('/slots') });
-  const [editing, setEditing] = useState<Slot | 'new' | null>(null), [allocation, setAllocation] = useState<Slot | null>(null), [release, setRelease] = useState<{ slot: Slot; patient: Slot['assignments'][number] } | null>(null), [therapist, setTherapist] = useState('');
+  const [editing, setEditing] = useState<Slot | 'new' | null>(null), [allocation, setAllocation] = useState<Slot | null>(null), [release, setRelease] = useState<{ slot: Slot; patient: Slot['assignments'][number] } | null>(null), [therapist, setTherapist] = useState(''), [selectedDay, setSelectedDay] = useState(() => new Date().getDay()), [detail, setDetail] = useState<Slot | null>(null);
   const therapists = [...new Map(query.data?.map(slot => [slot.therapistId, slot.therapist])).entries()];
   const slots = query.data?.filter(slot => !therapist || slot.therapistId === therapist);
+  const minutes = [...new Set(slots?.map(slot => slot.minute) ?? [])].sort((a, b) => a - b);
+  const cells = new Map<string, Slot[]>();
+  for (const slot of slots ?? []) { const key = `${slot.weekday}/${slot.minute}`; cells.set(key, [...(cells.get(key) ?? []), slot]); }
+  const today = new Date().getDay();
+  function card(slot: Slot) { return <article className={s.slot} key={slot.id}>
+    <h2>{slot.therapist}</h2>
+    <p>{slot.room}</p>
+    {slot.assignments.length ? <p>{slot.assignments.length}/{slot.capacity} pacientes fixos</p> : <Badge state={slot.blocked ? 'BLOCKED' : 'FREE'} />}
+    <div className={s.actions}><Button variant="secondary" onClick={() => setDetail(slot)}>Ver horário</Button></div>
+  </article>; }
   return <><div className={s.row}><h1>Grade de horários</h1>{ctx.role === 'THERAPIST' && <Button onClick={() => setEditing('new')}>Criar horário</Button>}</div>
     <p>Organize a grade semanal e as alocações fixas. Consulte presenças e bloqueios na Agenda.</p>
     {ctx.role !== 'THERAPIST' && <Field label="Filtrar terapeuta"><select value={therapist} onChange={e => setTherapist(e.target.value)}><option value="">Todos os terapeutas</option>{therapists.map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select></Field>}
-    {query.isPending ? <Loading /> : query.error ? <Message error>{query.error.message}</Message> : !slots?.length ? <div className={s.empty}>Nenhum horário cadastrado.</div> : <div className={s.patientGrid}>{slots.map(slot => <article className={s.panel} key={slot.id}>
-      <h2>{weekdays[slot.weekday]} · {minuteTime(slot.minute)}–{minuteTime(slot.minute + slot.duration)}</h2>
-      <p>{slot.therapist} · {slot.room}</p><p>{slot.minAge}–{slot.maxAge} anos · {slot.assignments.length}/{slot.capacity} pacientes fixos</p>
-      {slot.blocked && <Message>Horário bloqueado.</Message>}
-      {slot.assignments.map(patient => <div key={patient.patientId} className={s.panel}><p>{patient.name}</p>{ctx.role !== 'RECEPTION' && <Button variant="secondary" onClick={() => setRelease({ slot, patient })}>Liberar horário fixo</Button>}</div>)}
-      <div className={s.actions}>{ctx.role === 'THERAPIST' && <Button variant="secondary" onClick={() => setEditing(slot)}>Editar horário</Button>}<Button disabled={slot.blocked || slot.assignments.length >= slot.capacity} onClick={() => setAllocation(slot)}>Alocar paciente</Button></div>
-    </article>)}</div>}
+    {query.isPending ? <Loading /> : query.error ? <Message error>{query.error.message}</Message> : !slots?.length ? <EmptyState>Nenhum horário cadastrado ainda. Crie o primeiro horário fixo para começar a grade da semana.</EmptyState> : <>
+      <div className={s.tabs} aria-label="Dia da semana">{weekdays.map((day, i) => <Button key={day} variant="secondary" aria-pressed={selectedDay === i} onClick={() => setSelectedDay(i)}>{day}</Button>)}</div>
+      <div className={s.calendarScroll} role="region" aria-label="Grade semanal de horários" tabIndex={0}>
+        <table className={s.week}>
+          <caption>Grade semanal de horários fixos</caption>
+          <thead><tr><th scope="col" className={s.timeColumn}>Horário</th>{weekdays.map((day, i) => <th scope="col" key={day} className={`${s.calendarDay} ${selectedDay === i ? s.activeDay : ''}`} aria-current={i === today ? 'date' : undefined}>{day}{i === today && <small className={s.todayBadge}>Hoje</small>}</th>)}</tr></thead>
+          <tbody>{minutes.map(minute => <tr key={minute}>
+            <th scope="row" className={s.timeColumn}><time>{minuteTime(minute)}</time></th>
+            {weekdays.map((day, i) => <td key={day} className={`${s.calendarDay} ${selectedDay === i ? s.activeDay : ''}`}>
+              <div className={s.calendarEvents}>{cells.get(`${i}/${minute}`)?.length ? cells.get(`${i}/${minute}`)!.map(card) : <span className={s.calendarEmpty}>Sem horário</span>}</div>
+            </td>)}
+          </tr>)}</tbody>
+        </table>
+      </div>
+    </>}
+    {detail && <Modal title={`${weekdays[detail.weekday]} · ${minuteTime(detail.minute)}`} onClose={() => setDetail(null)}>
+      <p>{detail.therapist} · {detail.room}</p>
+      <p>{detail.minAge}–{detail.maxAge} anos · {detail.assignments.length}/{detail.capacity} pacientes fixos</p>
+      {detail.blocked && <Message>Horário bloqueado.</Message>}
+      {detail.assignments.map(patient => <div key={patient.patientId} className={s.panel}><p>{patient.name}</p>{ctx.role !== 'RECEPTION' && <Button variant="secondary" onClick={() => { setRelease({ slot: detail, patient }); setDetail(null); }}>Liberar horário fixo</Button>}</div>)}
+      <div className={s.actions}>{ctx.role === 'THERAPIST' && <Button variant="secondary" onClick={() => { setEditing(detail); setDetail(null); }}>Editar horário</Button>}<Button disabled={detail.blocked || detail.assignments.length >= detail.capacity} onClick={() => { setAllocation(detail); setDetail(null); }}>Alocar paciente</Button></div>
+    </Modal>}
     {editing && <SlotForm slot={editing === 'new' ? undefined : editing} onClose={() => setEditing(null)} />}
     {allocation && <Allocation slot={allocation} ctx={ctx} onClose={() => setAllocation(null)} />}
     {release && <Release {...release} onClose={() => setRelease(null)} />}

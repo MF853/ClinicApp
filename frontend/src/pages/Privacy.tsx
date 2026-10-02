@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api, date, useAction, type Member } from '../api';
-import { Button, Field, Loading, Message, Modal } from '../components/ui';
+import { Button, Field, Loading, Message, Modal, EmptyState } from '../components/ui';
 import s from '../styles/app.module.css';
 const types: Record<string, string> = { ACCESS: 'Acesso aos meus dados', CORRECT: 'Correção de dados', EXPORT: 'Exportação / portabilidade', DELETE: 'Exclusão de dados', REVOKE: 'Revogação de consentimento' };
 const statuses: Record<string, string> = { OPEN: 'Recebido', IN_REVIEW: 'Em análise', RESPONDED: 'Resposta registrada' };
@@ -31,7 +31,7 @@ export function Privacy({ ctx }: { ctx: Member }) {
     {action.error && !selected && <Message error>{action.error.message}</Message>}{action.isSuccess && !selected && <Message>Solicitação registrada. Confira o acompanhamento abaixo.</Message>}
     <h2>{inbox ? 'Pedidos da clínica' : 'Acompanhamento dos meus pedidos'}</h2>
     <p>O prazo indicado para acompanhamento é de 15 dias. A resposta deve explicar as providências, eventuais limitações e os próximos passos.</p>
-    {list.isPending ? <Loading /> : list.error ? <Message error>{list.error.message}<Button variant="secondary" onClick={() => list.refetch()}>Tentar novamente</Button></Message> : !list.data?.length ? <div className={s.empty}>Nenhum pedido registrado neste contexto.</div> : list.data.map(r => <article className={s.panel} key={r.id}>
+    {list.isPending ? <Loading /> : list.error ? <Message error>{list.error.message}<Button variant="secondary" onClick={() => list.refetch()}>Tentar novamente</Button></Message> : !list.data?.length ? <EmptyState>Nenhum pedido registrado ainda. Quando você enviar um pedido, o acompanhamento aparece aqui.</EmptyState> : list.data.map(r => <article className={s.panel} key={r.id}>
       <h3>{types[r.type] ?? r.type}</h3><p><strong>{statuses[r.status] ?? r.status}</strong>{r.status !== 'RESPONDED' && new Date(r.dueAt) < new Date() ? ' · Prazo ultrapassado' : ''}</p>
       {r.requesterName && <p>Titular: {r.requesterName}</p>}
       <small>Protocolo: {r.id}</small><p>Recebido em {date(r.createdAt, ctx.clinic.timezone)}<br />Prazo de acompanhamento: {date(r.dueAt, ctx.clinic.timezone)}</p>

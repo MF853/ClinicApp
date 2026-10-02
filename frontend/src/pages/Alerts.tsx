@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api, date, useAction, type Member } from '../api';
-import { Button, Field, Loading, Message, Modal } from '../components/ui';
+import { Button, Field, Loading, Message, Modal, EmptyState } from '../components/ui';
 import s from '../styles/app.module.css';
 interface Alert { id: string; text: string; audience: keyof typeof audiences; endsAt: string }
 const audiences = { ALL: 'Pacientes e terapeutas', PATIENT: 'Pacientes', THERAPIST: 'Terapeutas' };
@@ -11,7 +11,7 @@ export function Alerts({ ctx }: { ctx: Member }) {
   const alerts = query.data?.filter(alert => new Date(alert.endsAt).getTime() > Date.now());
   return <><div className={s.row}><h1>Avisos da clínica</h1>{ctx.role === 'ADMIN' && <Button onClick={() => setOpen(true)}>Publicar aviso</Button>}</div>
     <p>Comunicados vigentes de {ctx.clinic.name}.</p>
-    {query.isPending ? <Loading /> : query.error ? <Message error>{query.error.message}<Button onClick={() => query.refetch()}>Tentar novamente</Button></Message> : !alerts?.length ? <div className={s.empty}>Nenhum aviso vigente.</div> : <div className={s.patientGrid}>{alerts.map(alert => <article className={s.panel} key={alert.id}>
+    {query.isPending ? <Loading /> : query.error ? <Message error>{query.error.message}<Button onClick={() => query.refetch()}>Tentar novamente</Button></Message> : !alerts?.length ? <EmptyState>Nenhum aviso vigente no momento. Novos comunicados da clínica aparecem aqui assim que forem publicados.</EmptyState> : <div className={s.patientGrid}>{alerts.map(alert => <article className={s.panel} key={alert.id}>
       <h2>{audiences[alert.audience]}</h2><p style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{alert.text}</p><small>Exibição até {date(alert.endsAt, ctx.clinic.timezone)} ({ctx.clinic.timezone})</small>
     </article>)}</div>}
     {open && <Modal title="Publicar aviso" onClose={() => setOpen(false)}><p>O aviso ficará visível imediatamente para o público escolhido até o término informado.</p><form onSubmit={async e => {

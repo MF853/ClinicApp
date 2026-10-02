@@ -60,6 +60,7 @@
 .week .slot .badge { margin-top: 0; }
 .week .slot h2 { font-size: 14px; }
 .week .slot small { font-size: 12px; }
+.week .slot .panel { padding: 8px; margin: 8px 0; }
 .week .button { padding: 8px; font-size: 13px; width: 100%; }
 .tabs { display: none; }
 .modal { border: 1px solid var(--control-border); border-radius: 24px; width: min(640px, calc(100% - 32px)); max-height: calc(100dvh - 40px); overflow-y: auto; padding: 28px; color: var(--ink); background: var(--panel); box-shadow: 12px 12px 40px #352e4040; }
@@ -81,7 +82,10 @@
 .summary strong { color: var(--accent-ink); font-size: 24px; display: block; }
 .summary small { display: block; }
 .skeleton { height: 100px; border-radius: var(--panel-radius); background: var(--surface); box-shadow: var(--inset); margin-top: 16px; }
-.empty { padding: 28px; border: 1px dashed var(--control-border); border-radius: var(--panel-radius); box-shadow: var(--inset); color: var(--gray); }
+.empty { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 32px 28px; text-align: center; border: 1px dashed var(--clay); border-radius: var(--panel-radius); box-shadow: var(--inset); background: var(--clay-bg); color: var(--gray); }
+.empty svg { color: var(--clay); flex-shrink: 0; }
+.empty p { margin: 0; max-width: 46ch; }
+.todayBadge { display: inline-block; margin-top: 2px; padding: 2px 8px; border-radius: 999px; background: var(--clay-bg); color: var(--clay); font-weight: 700; font-size: 11px; }
 .selected, .tabs button[aria-pressed=true] { background: var(--lilac); color: var(--ink); border-color: var(--accent-ink); box-shadow: none; }
 .split { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .auditHint { font-size: 13px; color: var(--gray); }
