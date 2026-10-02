@@ -5,7 +5,8 @@
 .nav { display: grid; gap: 12px; }
 .nav a { display: flex; align-items: center; min-height: 48px; padding: 12px; border: 1px solid transparent; border-radius: var(--radius); text-decoration: none; color: var(--ink); font-size: 15px; }
 .nav a:hover { color: var(--accent-ink); box-shadow: var(--raised-small); }
-.nav a[aria-current=page] { background: var(--lilac); color: var(--accent-ink); border-left: 3px solid var(--purple); box-shadow: none; font-weight: 700; }
+.nav a[aria-current=page] { background: var(--lilac); color: var(--accent-ink); box-shadow: none; font-weight: 700; }
+.navToggle { display: none; }
 .content { min-width: 0; }
 .header { padding: 24px 32px; display: flex; justify-content: space-between; align-items: center; gap: 16px; border-bottom: 1px solid var(--border); }
 .header label { max-width: 380px; margin-bottom: 0; }
@@ -34,7 +35,8 @@
 .panel .panel { box-shadow: var(--inset); border-color: var(--border); border-radius: var(--radius); }
 .list { display: grid; gap: 16px; }
 .patientGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 24px; }
-.slot { background: var(--panel); border: 1px solid var(--border); border-top: 3px solid var(--lilac); border-radius: var(--panel-radius); box-shadow: var(--raised); padding: 20px; overflow-wrap: anywhere; min-width: 0; }
+.weekGroup + .weekGroup { margin-top: 32px; }
+.slot { background: var(--panel); border: 1px solid var(--border); border-radius: var(--panel-radius); box-shadow: var(--raised); padding: 20px; overflow-wrap: anywhere; min-width: 0; }
 .slot h2, .slot h3 { margin: 12px 0 8px; font-size: 16px; }
 .slot p { margin: 5px 0; font-size: 14px; }
 .slot time { color: var(--accent-ink); font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -51,7 +53,7 @@
 .week tbody .timeColumn { padding-top: 20px; }
 .calendarEvents { display: flex; flex-direction: column; gap: 10px; }
 .calendarEmpty { padding: 12px 0; color: var(--gray); font-size: 13px; text-align: center; }
-.week .slot { min-height: 340px; display: flex; flex-direction: column; padding: 12px; border-radius: 8px; border-top-color: var(--purple); box-shadow: none; background: var(--surface); }
+.week .slot { min-height: 340px; display: flex; flex-direction: column; padding: 12px; border-radius: 8px; box-shadow: none; background: var(--surface); }
 .week .slot > time { font-size: 16px; }
 .week .slot > div { display: flex; flex-direction: column; align-items: flex-start; flex: 1; }
 .week .slot .actions { margin-top: auto; padding-top: 12px; width: 100%; }
@@ -64,6 +66,9 @@
 .modal::backdrop { background: #352e4073; }
 .modal .row { margin-bottom: 20px; }
 .modal .row h2 { margin-bottom: 0; }
+.modal dt { font-weight: 700; margin-top: 16px; }
+.modal dt:first-child { margin-top: 0; }
+.modal dd { margin: 4px 0 0; color: var(--gray); }
 .login { max-width: 460px; margin: max(40px, 8vh) auto; padding: 40px; background: var(--panel); border: 1px solid var(--border); border-radius: 28px; box-shadow: 14px 14px 32px var(--shadow), -14px -14px 32px var(--light); }
 .login .brand { margin-bottom: 32px; }
 .login h1 { font-size: 30px; }
@@ -107,6 +112,9 @@
   .login h1 { font-size: 26px; }
   .modal { padding: 20px; }
   .week .button { width: auto; font-size: 14px; }
+  .navToggle { display: block; width: 100%; }
+  .nav { display: none; flex-direction: column; margin-top: 12px; }
+  .nav.navExpanded { display: flex; }
   .nav a { min-height: 44px; font-size: 14px; padding: 8px 10px; }
   .summary { gap: 16px 24px; padding: 20px; }
   .summary strong { font-size: 22px; }
