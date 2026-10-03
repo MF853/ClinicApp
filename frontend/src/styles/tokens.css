@@ -30,15 +30,23 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: "Literata";
+  src: url("../assets/fonts/Literata-Variable.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 200 900;
+  font-display: swap;
+}
+
 :root {
   --font-sans: "New Zen", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-serif: "Literata", Georgia, serif;
   font-family: var(--font-sans);
   font-size: 16px;
   line-height: 1.5;
   font-synthesis: none;
   color: var(--ink);
-  background: radial-gradient(1100px 700px at 10% -10%, var(--clay-bg) 0%, transparent 55%), radial-gradient(900px 700px at 100% 110%, var(--lilac-bg) 0%, transparent 55%), var(--surface);
-  background-attachment: fixed;
+  background: var(--surface);
   --purple: #845ec2;
   --lilac: #c493ff;
   --cream: #fefedf;
@@ -70,9 +78,9 @@
   --blue-bg: #e8eff8;
   --gray: #554d5c;
   --gray-bg: #f8f7f4;
-  --clay: #a65a28;
-  --clay-bg: #fbeee4;
   --lilac-bg: #efe6fa;
+  --sand-bg: #eae3da;
+  --sand-ink: #4f4337;
   --radius: 12px;
   --panel-radius: 20px;
 }
@@ -86,7 +94,8 @@ button:disabled { cursor: not-allowed; opacity: 1; color: var(--gray); backgroun
 a { color: var(--accent-ink); text-underline-offset: 3px; }
 :focus-visible { outline: 3px solid var(--accent-ink); outline-offset: 4px; }
 h1, h2, h3, p { margin-top: 0; }
-h1 { font-size: 28px; line-height: 1.2; letter-spacing: -.6px; margin-bottom: 8px; }
+h1, h2 { font-family: var(--font-serif); font-weight: 600; }
+h1 { font-size: 30px; line-height: 1.15; letter-spacing: -.5px; margin-bottom: 8px; }
 h2 { font-size: 20px; line-height: 1.3; }
 h3 { font-size: 16px; }
 input, select, textarea {
