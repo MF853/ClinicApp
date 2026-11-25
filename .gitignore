@@ -10,3 +10,19 @@ test-results/
 *.log
 .serena/cache/
 .serena
+
+# Ruflo local secrets and runtime data
+.env.local
+.env.*.local
+.claude-flow/
+.claude/
+.agents/
+CLAUDE.md
+.swarm/
+agentdb.rvf*
+ruvector.db
+frontend/.impeccable/
+
+# Usability test video recordings (WhatsApp)
+*.mp4
+
